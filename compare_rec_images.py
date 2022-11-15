@@ -6,16 +6,9 @@ import click
 import os
 import matplotlib.pyplot as plt
 
+import utils
 
-def calc_norm(img,norm):
-    if (norm==False or norm==None):
-        return 1
-    elif norm == "max":
-        return img.max()
-    elif norm == "sum":
-        return img.sum()
-    else:
-        return img.max()
+
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -40,12 +33,12 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
 
 
 
-    norm_src = calc_norm(source_array, norm=norm)
+    norm_src = utils.calc_norm(source_array, norm=norm)
     stack_img = [source_array / norm_src]
 
     for img in (images):
         img_array = itk.array_from_image(itk.imread(img))
-        norm_img = calc_norm(img_array, norm=norm)
+        norm_img = utils.calc_norm(img_array, norm=norm)
         stack_img.append(img_array / norm_img)
 
 
