@@ -6,9 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json
 
+
+import utils
+
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-
-
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('--labels', help = 'ex: iec_labels.mhd. ie image containing the label of the object in each voxel. It is assumed that iec_labels.json is in the same folder as iec_labels.mhd')
 @click.option('--source')
@@ -55,6 +56,8 @@ def show_RC_curve(labels, source, recons_img, legend,color, norm):
     # open source image
     img_src = itk.imread(source)
     np_src = itk.array_from_image(img_src)
+    if norm=='sum':
+        np_src = np_src / utils.calc_norm(np_src,norm)
 
     assert ((np_labels.shape==np_src.shape))
 
@@ -65,12 +68,14 @@ def show_RC_curve(labels, source, recons_img, legend,color, norm):
     for img_num,img_file in enumerate(recons_img):
         img_recons = itk.imread(img_file)
         np_recons = itk.array_from_image(img_recons)
+        np_recons_norm = utils.calc_norm(np_recons, norm)
+        np_recons_normalized = np_recons / np_recons_norm
 
-
+        print(np_recons_norm)
         dict_sphereslabels_RC = {}
         for sph_label in dict_sphereslabels_radius:
             mean_act_src = np.mean(np_src[np_labels == json_labels[sph_label]])
-            mean_act_img = np.mean(np_recons[np_labels == json_labels[sph_label]])
+            mean_act_img = np.mean(np_recons_normalized[np_labels == json_labels[sph_label]])
             dict_sphereslabels_RC[sph_label] = mean_act_img / mean_act_src
 
         x = []
