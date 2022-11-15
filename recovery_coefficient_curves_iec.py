@@ -57,13 +57,15 @@ def show_RC_curve(labels, source, recons_img, legend,color, norm):
     img_src = itk.imread(source)
     np_src = itk.array_from_image(img_src)
     if norm=='sum':
-        np_src = np_src / utils.calc_norm(np_src,norm)
+        np_src_norm = utils.calc_norm(np_src,norm)
+        np_src = np_src / np_src_norm
 
     assert ((np_labels.shape==np_src.shape))
 
     fig,ax = plt.subplots()
-    ax.set_xlabel('Object radius (mm)')
-    ax.set_ylabel('Recovery Coefficient')
+    ax.set_xlabel('Object radius (mm)', fontsize=18)
+    ax.set_ylabel('Recovery Coefficient', fontsize=18)
+    ax.set_ylim([0,1])
 
     for img_num,img_file in enumerate(recons_img):
         img_recons = itk.imread(img_file)
@@ -71,7 +73,6 @@ def show_RC_curve(labels, source, recons_img, legend,color, norm):
         np_recons_norm = utils.calc_norm(np_recons, norm)
         np_recons_normalized = np_recons / np_recons_norm
 
-        print(np_recons_norm)
         dict_sphereslabels_RC = {}
         for sph_label in dict_sphereslabels_radius:
             mean_act_src = np.mean(np_src[np_labels == json_labels[sph_label]])
