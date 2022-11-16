@@ -5,6 +5,7 @@ import itk
 import matplotlib.pyplot as plt
 import numpy as np
 import json
+import os
 
 
 import utils
@@ -53,19 +54,26 @@ def show_RC_curve(labels, source, recons_img, legend,color, norm):
     json_labels_file = open(json_labels_filename).read()
     json_labels = json.loads(json_labels_file)
 
+    # background mask
+    background_mask = (np_labels>1)
+    for sph in dict_sphereslabels_radius:
+        background_mask = background_mask * (np_labels!=json_labels[sph])
+
     # open source image
     img_src = itk.imread(source)
     np_src = itk.array_from_image(img_src)
+    assert ((np_labels.shape == np_src.shape))
+
     if norm=='sum':
         np_src_norm = utils.calc_norm(np_src,norm)
         np_src = np_src / np_src_norm
 
-    assert ((np_labels.shape==np_src.shape))
+    mean_bg_src = np.mean(np_src[background_mask])
 
     fig,ax = plt.subplots()
     ax.set_xlabel('Object radius (mm)', fontsize=18)
     ax.set_ylabel('Recovery Coefficient', fontsize=18)
-    ax.set_ylim([0,1])
+    plt.rcParams["savefig.directory"] = os.getcwd()
 
     for img_num,img_file in enumerate(recons_img):
         img_recons = itk.imread(img_file)
@@ -77,7 +85,10 @@ def show_RC_curve(labels, source, recons_img, legend,color, norm):
         for sph_label in dict_sphereslabels_radius:
             mean_act_src = np.mean(np_src[np_labels == json_labels[sph_label]])
             mean_act_img = np.mean(np_recons_normalized[np_labels == json_labels[sph_label]])
-            dict_sphereslabels_RC[sph_label] = mean_act_img / mean_act_src
+
+            mean_bg_img = np.mean(np_recons_normalized[background_mask])
+
+            dict_sphereslabels_RC[sph_label] = (mean_act_img - mean_bg_img) / (mean_act_src - mean_bg_src)
 
         x = []
         y = []
