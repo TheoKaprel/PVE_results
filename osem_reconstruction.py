@@ -1,13 +1,24 @@
+#!/usr/bin/env python3
+
 import click
 import itk
 from itk import RTK as rtk
 import numpy as np
 import os
 
-from forwardprojection import alphapve_default,sigma0pve_default
+from pathlib import Path
+import sys
+path_root = Path(__file__).parents[1]
+sys.path.append(str(path_root))
 
-print(alphapve_default)
-print(sigma0pve_default)
+from PVE_data.Analytical_data import forwardprojection
+
+sigma0pve_default = forwardprojection.sigma0pve_default
+alphapve_default = forwardprojection.alphapve_default
+
+
+
+
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
