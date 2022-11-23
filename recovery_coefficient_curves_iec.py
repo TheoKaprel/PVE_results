@@ -18,7 +18,8 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('-l','--legend', multiple = True)
 @click.option('-c','--color', multiple = True)
 @click.option('--norm')
-def show_RC_curve(labels, source, recons_img, legend,color, norm):
+@click.option('--title')
+def show_RC_curve(labels, source, recons_img, legend,color, norm, title):
 
     if len(legend)>0:
         assert(len(legend)==len(recons_img))
@@ -72,7 +73,7 @@ def show_RC_curve(labels, source, recons_img, legend,color, norm):
 
     fig,ax = plt.subplots()
     ax.set_xlabel('Object radius (mm)', fontsize=18)
-    ax.set_ylabel('Recovery Coefficient', fontsize=18)
+    ax.set_ylabel('contrast Recovery Coefficient', fontsize=18)
     plt.rcParams["savefig.directory"] = os.getcwd()
 
     for img_num,img_file in enumerate(recons_img):
@@ -97,6 +98,9 @@ def show_RC_curve(labels, source, recons_img, legend,color, norm):
             y.append(dict_sphereslabels_RC[sph_label])
 
         ax.plot(x,y, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
+
+    if title:
+        ax.set_title(title, fontsize = 18)
 
     plt.legend()
     plt.show()

@@ -3,7 +3,6 @@
 import itk
 import numpy as np
 import click
-import os
 import matplotlib.pyplot as plt
 
 import utils
@@ -14,7 +13,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('--source', required = True)
 @click.option('--images', '-i',multiple = True, required = True)
-@click.option('--legend', '-l')
+@click.option('--legend', '-l', multiple = True)
 @click.option('-s','--slice', type = int)
 @click.option('-p','--profile', type = int)
 @click.option('--mse',  is_flag = True, default = False)
@@ -42,8 +41,8 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
         stack_img.append(img_array / norm_img)
 
 
-    vmin_ = min([np.min(sl) for sl in stack_img])
-    vmax_ = max([np.max(sl) for sl in stack_img])
+    vmin_ = min([np.min(sl[slice,:,:]) for sl in stack_img])
+    vmax_ = max([np.max(sl[slice,:,:]) for sl in stack_img])
 
 
     imsh = ax_img[0].imshow(stack_img[0][slice,:,:], vmin = vmin_, vmax = vmax_)
@@ -67,8 +66,15 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
     if mse:
         fig_mse,ax_mse = plt.subplots()
         lrmse = []
+        norm_src = utils.calc_norm(source_array, norm=norm)
+        src = source_array / norm_src
+
         for k in range(len(images)):
-            rmse = np.sqrt(np.mean((stack_img[0] - stack_img[k+1])**2))
+            img_array = itk.array_from_image(itk.imread(images[k]))
+            norm_img = utils.calc_norm(img_array, norm=norm)
+            img = img_array/norm_img
+
+            rmse = np.sqrt(np.mean((src - img)**2))
             lrmse.append(rmse)
 
         ax_mse.bar([k for k in range(len(images))],lrmse, tick_label = legends, color = 'black')
