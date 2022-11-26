@@ -12,14 +12,15 @@ import utils
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option('--labels', help = 'ex: iec_labels.mhd. ie image containing the label of the object in each voxel. It is assumed that iec_labels.json is in the same folder as iec_labels.mhd')
+@click.option('--labels', help = 'ex: iec_labels.mhd. ie image containing the label of the object in each voxel. if labels-json is not provided, it is assumed that iec_labels.json is in the same folder as iec_labels.mhd')
+@click.option('--labels-json')
 @click.option('--source')
 @click.option('--i', 'recons_img', multiple = True)
 @click.option('-l','--legend', multiple = True)
 @click.option('-c','--color', multiple = True)
 @click.option('--norm')
 @click.option('--title')
-def show_RC_curve(labels, source, recons_img, legend,color, norm, title):
+def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm, title):
 
     if len(legend)>0:
         assert(len(legend)==len(recons_img))
@@ -45,13 +46,17 @@ def show_RC_curve(labels, source, recons_img, legend,color, norm, title):
     img_labels = itk.imread(labels)
     np_labels = itk.array_from_image(img_labels)
     # open json labels
-    if '.mhd' in labels:
-        json_labels_filename = labels.replace('.mhd', '.json')
-    elif '.mha' in labels:
-        json_labels_filename = labels.replace('.mha', '.json')
+    if labels_json is None:
+        if '.mhd' in labels:
+            json_labels_filename = labels.replace('.mhd', '.json')
+        elif '.mha' in labels:
+            json_labels_filename = labels.replace('.mha', '.json')
+        else:
+            print('ERROR. Unable to load labels')
+            exit(0)
     else:
-        print('ERROR. Unable to load labels')
-        exit(0)
+        json_labels_filename = labels_json
+
     json_labels_file = open(json_labels_filename).read()
     json_labels = json.loads(json_labels_file)
 
