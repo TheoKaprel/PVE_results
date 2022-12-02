@@ -28,7 +28,6 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--like')
 @click.option('--size', type = int)
 @click.option('--spacing', type = float)
-@click.option('--data_folder', help = 'Location of the folder containing : geom_120.xml and acf_ct_air.mhd')
 @click.option('--geom', '-g')
 @click.option('--attenuationmap', '-a')
 @click.option('--beta', type = float, default = 0, show_default = True)
@@ -38,20 +37,24 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--FB', 'projector_type', default = "Zeng", show_default = True)
 @click.option('--output-every', type = int)
 @click.option('--iteration-filename', help = 'If output-every is not null, iteration-filename to output intermediate iterations with %d as a placeholder for iteration number')
-def osem_reconstruction_click(input,start, outputfilename,like,size,spacing, data_folder, geom,attenuationmap,beta, pvc, nprojpersubset, niterations, projector_type, output_every, iteration_filename):
-    osem_reconstruction(input=input,start=start, outputfilename=outputfilename,like=like,size=size,spacing=spacing, data_folder=data_folder, geom=geom,attenuationmap=attenuationmap,
-                        beta= beta, pvc=pvc, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type, output_every=output_every, iteration_filename=iteration_filename)
+@click.option('-v', '--verbose', count=True)
+def osem_reconstruction_click(input,start, outputfilename,like,size,spacing, geom,attenuationmap,beta, pvc, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
+    osem_reconstruction(input=input,start=start, outputfilename=outputfilename,like=like,size=size,spacing=spacing, geom=geom,attenuationmap=attenuationmap,
+                        beta= beta, pvc=pvc, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type, output_every=output_every, iteration_filename=iteration_filename, verbose=verbose)
 
-def osem_reconstruction(input,start, outputfilename,like,size,spacing, data_folder, geom,attenuationmap,beta, pvc, nprojpersubset, niterations, projector_type, output_every, iteration_filename):
-    print('Begining of reconstruction ...')
+def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,attenuationmap,beta, pvc, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
+    if verbose>0:
+        print('Begining of reconstruction ...')
 
     Dimension = 3
     pixelType = itk.F
     imageType = itk.Image[pixelType, Dimension]
 
-    print('Creating the first output image...')
+    if verbose>0:
+        print('Creating the first output image...')
     if start:
-        output_image = itk.imread(start)
+        output_image = itk.imread(start, pixelType)
+        print(output_image)
     elif (size and spacing):
         output_array = np.ones((size,size,size))
         output_image = itk.image_from_array(output_array)
@@ -69,25 +72,21 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, data_fold
         constant_image.SetConstant(1)
         output_image = constant_image.GetOutput()
 
-    print('Reading input projections...')
+    if verbose>0:
+        print('Reading input projections...')
     projections = itk.imread(input, pixelType)
     nproj = itk.size(projections)[2]
-    print(f'{nproj} projections')
+    if verbose>0:
+        print(f'{nproj} projections')
+        print('Reading geometry file ...')
 
-    print('Reading geometry file ...')
-    if (data_folder or geom):
-        if (data_folder and not(geom)):
-            geom_filename = os.path.join(data_folder, f'geom_{nproj}.xml')
-        elif (geom and not (data_folder)):
-            geom_filename = geom
-        else:
-            print('Error in geometry arguments')
-            exit(0)
+    if geom:
         xmlReader = rtk.ThreeDCircularProjectionGeometryXMLFileReader.New()
-        xmlReader.SetFilename(geom_filename)
+        xmlReader.SetFilename(geom)
         xmlReader.GenerateOutputInformation()
         geometry = xmlReader.GetOutputObject()
-        print(geom_filename + ' is opened!')
+        if verbose>0:
+            print(geom + ' is open!')
     else:
         if projector_type=="Zeng":
             Offset = projections.GetOrigin()
@@ -98,25 +97,22 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, data_fold
         geometry = rtk.ThreeDCircularProjectionGeometry.New()
         for i in range(nproj):
             geometry.AddProjection(380, 0, list_angles[i], Offset[0], Offset[1])
-        print(f'Created geom file with {nproj} angles and Offset = {Offset[0]},{Offset[1]}')
+        if verbose>0:
+            print(f'Created geom file with {nproj} angles and Offset = {Offset[0]},{Offset[1]}')
 
-
-    print('Reading attenuation map ...')
-    if (data_folder and not(attenuationmap)):
-        attmap_filename = os.path.join(data_folder, f'acf_ct_air.mhd')
-        att_corr = True
-    elif (attenuationmap and not (data_folder)):
+    if verbose>0:
+        print('Reading attenuation map ...')
+    if (attenuationmap):
         attmap_filename = attenuationmap
+        attenuation_map = itk.imread(attmap_filename, pixelType)
         att_corr = True
     else:
         att_corr = False
-        print('no att map but ok')
+        if verbose>0:
+            print('no att map but ok')
 
-    if att_corr:
-        attenuation_map = itk.imread(attmap_filename, pixelType)
-
-
-    print('Set OSEM parameters ...')
+    if verbose>0:
+        print('Set OSEM parameters ...')
     OSEMType = rtk.OSEMConeBeamReconstructionFilter[imageType, imageType]
     osem = OSEMType.New()
     osem.SetInput(0, output_image)
@@ -149,16 +145,16 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, data_fold
     osem.SetForwardProjectionFilter(FP)
     osem.SetBackProjectionFilter(BP)
 
-
-
     global iter
     iter = 0
     def callback():
         global iter
         iter+=1
-        if iter%output_every==0:
+        if (output_every and iter%output_every)==0:
             output_iter = osem.GetOutput()
             itk.imwrite(output_iter, iteration_filename.replace('%d', str(iter)))
+
+        if verbose>0:
             print(f'end of iteration {iter}')
 
     if output_every:
@@ -170,17 +166,19 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, data_fold
                 exit(0)
         else:
             iteration_filename = outputfilename.replace('.mh', '_%d.mh')
-        osem.AddObserver(itk.IterationEvent(), callback)
+    osem.AddObserver(itk.IterationEvent(), callback)
 
-
-    print('Reconstruction ...')
+    if verbose>0:
+        print('Reconstruction ...')
     osem.Update()
 
     # Writer
-    print("Writing output image...")
+    if verbose>0:
+        print("Writing output image...")
     itk.imwrite(osem.GetOutput(), outputfilename)
 
-    print('Done!')
+    if verbose>0:
+        print('Done!')
 
 
 

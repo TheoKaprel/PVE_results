@@ -4,6 +4,8 @@ import itk
 import numpy as np
 import click
 import matplotlib.pyplot as plt
+import os
+
 
 import utils
 
@@ -51,6 +53,7 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
         imsh = ax_img[k+1].imshow(stack_img[k+1][slice,:,:], vmin = vmin_, vmax = vmax_)
         ax_img[k+1].set_title(legends[k])
 
+
     fig_img.colorbar(imsh, ax=ax_img)
 
     plt.suptitle(f'Slice {slice}')
@@ -80,7 +83,10 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
         ax_mse.bar([k for k in range(len(images))],lrmse, tick_label = legends, color = 'black')
         ax_mse.set_ylabel('MSE', fontsize = 20)
 
+    ax_mse.set_title(source)
 
+    ax_prof.set_title(source)
+    plt.rcParams["savefig.directory"] = os.getcwd()
     plt.show()
 
 
