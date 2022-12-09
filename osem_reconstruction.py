@@ -54,7 +54,6 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,atte
         print('Creating the first output image...')
     if start:
         output_image = itk.imread(start, pixelType)
-        print(output_image)
     elif (size and spacing):
         output_array = np.ones((size,size,size))
         output_image = itk.image_from_array(output_array)

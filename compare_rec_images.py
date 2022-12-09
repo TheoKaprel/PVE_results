@@ -65,10 +65,12 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
             ax_prof.plot(stack_img[k+1][slice,profile,:], '-',marker='.', markersize=2,label = legends[k])
 
         ax_prof.legend()
+        ax_prof.set_title(source)
 
     if mse:
-        fig_mse,ax_mse = plt.subplots()
+        fig_mse,ax_mse = plt.subplots(1,2)
         lrmse = []
+        lnmae = []
         norm_src = utils.calc_norm(source_array, norm=norm)
         src = source_array / norm_src
 
@@ -78,14 +80,20 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
             img = img_array/norm_img
 
             rmse = np.sqrt(np.mean((src - img)**2))
-            lrmse.append(rmse)
+            nrmse = rmse / np.mean(np.abs(src))
+            lrmse.append(nrmse)
 
-        ax_mse.bar([k for k in range(len(images))],lrmse, tick_label = legends, color = 'black')
-        ax_mse.set_ylabel('MSE', fontsize = 20)
+            mae = np.mean(np.abs(src - img))
+            nmae = mae / np.mean(np.abs(src))
+            lnmae.append(nmae)
 
-    ax_mse.set_title(source)
+        ax_mse[0].bar([k for k in range(len(images))],lrmse, tick_label = legends, color = 'black')
+        ax_mse[0].set_ylabel('NRMSE', fontsize = 20)
+        ax_mse[1].bar([k for k in range(len(images))],lnmae, tick_label = legends, color = 'black')
+        ax_mse[1].set_ylabel('NMAE', fontsize = 20)
+        fig_mse.suptitle(source)
 
-    ax_prof.set_title(source)
+
     plt.rcParams["savefig.directory"] = os.getcwd()
     plt.show()
 

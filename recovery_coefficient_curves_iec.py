@@ -30,7 +30,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm, t
     if len(color)>0:
         assert (len(color)==len(recons_img))
     else:
-        color = ['green', 'blue','cyan', 'orange', 'red', 'black', 'magenta']
+        color = ['green', 'blue', 'orange', 'red', 'black', 'magenta']
 
     # dictionnary whith spheres labels as keys and their corresponding radius as value.
     dict_sphereslabels_radius = {
