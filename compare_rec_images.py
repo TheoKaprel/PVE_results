@@ -14,7 +14,7 @@ import utils
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('--source', required = True)
-@click.option('--images', '-i',multiple = True, required = True)
+@click.option('--img', '-i', 'images', multiple = True, required = True)
 @click.option('--legend', '-l', multiple = True)
 @click.option('-s','--slice', type = int)
 @click.option('-p','--profile', type = int)
