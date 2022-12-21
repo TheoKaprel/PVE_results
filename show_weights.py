@@ -10,8 +10,9 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('--pth')
-@click.option('--network', help = 'ex : unet_denoiser,')
-def print_hi(pth, network):
+@click.option('--network', help = 'ex : unet_denoiser,unet_pvc ...')
+@click.option('--layer')
+def print_hi(pth, network, layer):
     pth_file = torch.load(pth)
 
     if network not in pth_file.keys():
@@ -20,8 +21,14 @@ def print_hi(pth, network):
 
     network_dict = pth_file[network]
     weights = np.array([])
+    print(network_dict.keys())
 
-    for layer_weights in network_dict.values():
+    if layer==None:
+        values = network_dict.values()
+    else:
+        values = network_dict[layer]
+
+    for layer_weights in values:
         weights = np.concatenate((weights, layer_weights.cpu().detach().numpy().ravel()))
 
     fig,ax = plt.subplots(1,3)
