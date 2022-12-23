@@ -27,6 +27,7 @@ def print_hi(pth, network, layer):
         values = network_dict.values()
     else:
         values = network_dict[layer]
+        print(values.shape)
 
     for layer_weights in values:
         weights = np.concatenate((weights, layer_weights.cpu().detach().numpy().ravel()))
