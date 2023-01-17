@@ -29,6 +29,16 @@ def print_hi(pth, network, layer):
         values = network_dict[layer]
         print(values.shape)
 
+        for _ in range(3):
+            i_ = np.random.randint(0,values.shape[0])
+            for __ in range(3):
+                i__ = np.random.randint(0, values.shape[1])
+                fig,ax = plt.subplots()
+                ax.imshow(values[i_,i__,:,:].detach().cpu().numpy())
+        plt.show()
+
+
+
     for layer_weights in values:
         weights = np.concatenate((weights, layer_weights.cpu().detach().numpy().ravel()))
 
@@ -36,6 +46,10 @@ def print_hi(pth, network, layer):
     ax[0].hist(weights, bins= 100)
     ax[1].hist(weights, bins= 100, range=(-1,1))
     ax[2].hist(weights, bins= 1000, range=(-1,1))
+
+
+
+
     plt.show()
 
 if __name__ == '__main__':

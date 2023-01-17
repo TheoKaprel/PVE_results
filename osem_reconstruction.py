@@ -4,7 +4,6 @@ import click
 import itk
 from itk import RTK as rtk
 import numpy as np
-import os
 
 from pathlib import Path
 import sys
@@ -23,7 +22,7 @@ alphapve_default = forwardprojection.alphapve_default
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('--input', '-i', help = 'input projections')
-@click.option('--outputfilename', '-o', help = 'Output filename of desired type (mhd/mha)')
+@click.option('--output', '-o', help = 'Output filename of desired type (mhd/mha)')
 @click.option('--start')
 @click.option('--like')
 @click.option('--size', type = int)
@@ -38,8 +37,8 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--output-every', type = int)
 @click.option('--iteration-filename', help = 'If output-every is not null, iteration-filename to output intermediate iterations with %d as a placeholder for iteration number')
 @click.option('-v', '--verbose', count=True)
-def osem_reconstruction_click(input,start, outputfilename,like,size,spacing, geom,attenuationmap,beta, pvc, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
-    osem_reconstruction(input=input,start=start, outputfilename=outputfilename,like=like,size=size,spacing=spacing, geom=geom,attenuationmap=attenuationmap,
+def osem_reconstruction_click(input,start, output,like,size,spacing, geom,attenuationmap,beta, pvc, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
+    osem_reconstruction(input=input,start=start, outputfilename=output,like=like,size=size,spacing=spacing, geom=geom,attenuationmap=attenuationmap,
                         beta= beta, pvc=pvc, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type, output_every=output_every, iteration_filename=iteration_filename, verbose=verbose)
 
 def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,attenuationmap,beta, pvc, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):

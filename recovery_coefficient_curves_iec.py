@@ -6,8 +6,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json
 import os
+from pathlib import Path
+import sys
 
+path_root = Path(__file__).parents[1]
+sys.path.append(str(path_root))
 
+from PVE_data.Analytical_data.parameters import FWHM_b
 import utils
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -99,7 +104,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm, t
         x = []
         y = []
         for sph_label in dict_sphereslabels_RC:
-            x.append(dict_sphereslabels_radius[sph_label])
+            x.append(dict_sphereslabels_radius[sph_label] / FWHM_b )
             y.append(dict_sphereslabels_RC[sph_label])
 
         ax.plot(x,y, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
