@@ -7,6 +7,8 @@ import numpy as np
 import json
 import os
 from pathlib import Path
+from matplotlib.ticker import FormatStrFormatter
+
 import sys
 
 path_root = Path(__file__).parents[1]
@@ -27,20 +29,21 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--errors', is_flag = True, default = False)
 @click.option('--auto')
 @click.option('--ref', multiple=True)
-def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,errors, auto, ref):
+@click.option('--mm', default='4')
+def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,errors, auto, ref, mm):
     if auto is not None:
-        labels=os.path.join(auto, 'iec_labels_4mm_c_rot.mhd')
-        labels_json=os.path.join(auto, 'iec_labels_4mm.json')
-        source=os.path.join(auto,'iec_src_bg_4mm_c_rot.mhd') if (norm is not None)\
-            else os.path.join(auto, 'iec_src_bg_4mm_c_rot_scaled.mhd')
+        labels=os.path.join(auto, f'iec_labels_{mm}mm_c_rot.mhd')
+        labels_json=os.path.join(auto, f'iec_labels_{mm}mm.json')
+        source=os.path.join(auto,f'iec_src_bg_{mm}mm_c_rot.mhd') if (norm is not None)\
+            else os.path.join(auto, f'iec_src_bg_{mm}mm_c_rot_scaled.mhd')
         recons_img=[os.path.join(auto, img_fn) for img_fn in ['iec_rec_noPVE_noPVC.mhd',
                                                               'iec_rec_PVE_PVC.mhd',
                                                               'iec_rec_PVE_noPVC.mhd']]
-        legend=["noPVE-noPVC", "PVE-PVC", "PVE-noPVC"]
+        legend=["noPVE-noPVC", "PVE-RM", "PVE-noPVC"]
         color = ["green", "blue", "red"]
         for one_ref in ref:
             recons_img.append(os.path.join(auto, f'iec_rec_DeepPVC_{one_ref}.mhd'))
-            legend.append(f"PVE-DeepPVC-{one_ref}")
+            legend.append(f"PVE-DeepPVC")
             color.append("orange")
 
 
@@ -100,7 +103,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
     fig,ax_RC = plt.subplots()
     fig,ax_CNR = plt.subplots()
     ax_RC.set_xlabel('Sphere Diameter / FWHM', fontsize=18)
-    ax_RC.set_ylabel('contrast Recovery Coefficient', fontsize=18)
+    ax_RC.set_ylabel('RC', fontsize=18)
     ax_CNR.set_xlabel('Sphere Diameter / FWHM', fontsize=18)
     ax_CNR.set_ylabel('CNR', fontsize=18)
     plt.rcParams["savefig.directory"] = os.getcwd()
@@ -145,28 +148,37 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
 
 
 
-    ax_RC.set_title("Recovery Coeff for IEC phantom", fontsize = 18)
+    # ax_RC.set_title("Recovery Coefficients for the IEC phantom", fontsize = 18)
     ax_CNR.set_title("Contrast to Noise Ratio for IEC phantom", fontsize = 18)
-    ax_RC.legend()
+    ax_RC.legend(fontsize=12)
     ax_CNR.legend()
     # plt.legend()
 
     if errors:
-        fig_e, ax_e = plt.subplots(2, 2)
-        ax_e[0,0].bar([k for k in range(len(dict_err['labels']))],dict_err['NMAE'], tick_label = dict_err['labels'], color = 'black')
-        ax_e[0,0].set_ylabel('NMAE', fontsize = 20)
-        ax_e[0,1].bar([k for k in range(len(dict_err['labels']))],dict_err['NRMSE'], tick_label = dict_err['labels'], color = 'black')
-        ax_e[0,1].set_ylabel('NRMSE', fontsize = 20)
-        ax_e[1,0].bar([k for k in range(len(dict_err['labels']))],dict_err['PSNR'], tick_label = dict_err['labels'], color = 'black')
-        ax_e[1,0].set_ylabel('PSNR', fontsize = 20)
-        ax_e[1,1].bar([k for k in range(len(dict_err['labels']))],dict_err['SSIM'], tick_label = dict_err['labels'], color = 'black')
-        ax_e[1,1].set_ylabel('SSIM', fontsize = 20)
-        ax_e[0,0].tick_params(axis='x', labelsize=15)
-        ax_e[0,1].tick_params(axis='x', labelsize=15)
-        ax_e[1,0].tick_params(axis='x', labelsize=15)
-        ax_e[1,1].tick_params(axis='x', labelsize=15)
+        colors=['grey','black', 'black', 'black']
+        fig_e, ax_e = plt.subplots(2, 2, figsize=(20,20))
+        ax_e[0,0].bar([k for k in range(len(dict_err['labels']))],dict_err['NMAE'], tick_label = dict_err['labels'], color = colors)
+        ax_e[0,0].set_ylabel('NMAE', fontsize = 20, weight="bold")
+        ax_e[0,1].bar([k for k in range(len(dict_err['labels']))],dict_err['NRMSE'], tick_label = dict_err['labels'], color = colors)
+        ax_e[0,1].set_ylabel('NRMSE', fontsize = 20, weight="bold")
+        ax_e[1,0].bar([k for k in range(len(dict_err['labels']))],dict_err['PSNR'], tick_label = dict_err['labels'], color = colors)
+        ax_e[1,0].set_ylabel('PSNR', fontsize = 20, weight="bold")
+        ax_e[1,1].bar([k for k in range(len(dict_err['labels']))],dict_err['SSIM'], tick_label = dict_err['labels'], color = colors)
+        ax_e[1,1].set_ylabel('SSIM', fontsize = 20, weight="bold")
+        font_prop={'weight' : 'bold', 'size' : 15, }
+        for i in range(2):
+            for j in range(2):
+                ax_e[i,j].set_xticklabels(ax_e[i,j].get_xticklabels(), font_prop)
+                ax_e[i,j].set_yticklabels(ax_e[i,j].get_yticks(), font_prop)
+        ax_e[0,0].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        ax_e[0,1].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        ax_e[1,0].yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+        ax_e[1,1].yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
 
-
+        for errtype in ["NRMSE", "NMAE", "PSNR", "SSIM"]:
+            print(f'{errtype} : ')
+            for i,lab in enumerate(dict_err['labels']):
+                print(f"   {lab} : {round(dict_err[f'{errtype}'][i],4)}")
     plt.show()
 
 

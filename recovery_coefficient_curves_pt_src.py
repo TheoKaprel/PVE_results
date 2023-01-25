@@ -36,7 +36,8 @@ def show_RC_curve_pt_src(dir, pthref, norm, errors):
         list_NMAE_DeepPVC, list_NRMSE_DeepPVC, list_PSNR_DeepPVC, list_SSIM_DeepPVC = [], [], [], []
         list_CNR_noPVE_noPVC,list_CNR_PVE_PVC,list_CNR_PVE_noPVC,list_CNR_DeepPVC=[],[],[],[]
 
-    list_legends=['noPVE-noPVC', 'PVE-PVC', 'PVE-noPVC', f'PVE-DeepPVC-{pthref}']
+    # list_legends=['noPVE-noPVC', 'PVE-PVC', 'PVE-noPVC', f'PVE-DeepPVC-{pthref}']
+    list_legends=['noPVE-noPVC', 'PVE-RM', 'PVE-noPVC', f'PVE-DeepPVC']
 
 
     for item,(name,radius) in enumerate(json_radius.items()):
@@ -113,9 +114,9 @@ def show_RC_curve_pt_src(dir, pthref, norm, errors):
     ax.plot(list_size, list_RC_DeepPVC,'-o',markersize = 5,color='orange', linewidth = 2,label=list_legends[3])
     ax.set_xlabel('Sphere diameter / FWHM', fontsize=18)
     ax.set_ylabel('RC', fontsize=18)
-    ax.legend()
+    plt.legend(fontsize=12)
 
-    ax.set_title("Recovery Coefficient for Point Sources", fontsize=18)
+    ax.set_title("Recovery Coefficients for different Sphere Size", fontsize=18)
 
 
     if errors:
@@ -160,7 +161,7 @@ def show_RC_curve_pt_src(dir, pthref, norm, errors):
         ax_CNR.legend()
 
 
-    plt.legend()
+    # plt.legend(fontsize=18)
     plt.rcParams["savefig.directory"] = os.getcwd()
     plt.show()
 
