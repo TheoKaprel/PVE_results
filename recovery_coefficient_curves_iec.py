@@ -173,7 +173,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
         ax_e[0,0].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
         ax_e[0,1].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
         ax_e[1,0].yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
-        ax_e[1,1].yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+        ax_e[1,1].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
         for errtype in ["NRMSE", "NMAE", "PSNR", "SSIM"]:
             print(f'{errtype} : ')

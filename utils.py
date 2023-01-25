@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-
+from skimage.metrics import structural_similarity
 
 def calc_norm(img,norm):
     if (norm==False or norm==None):
@@ -44,18 +44,23 @@ def CNR(mask1, mask2, img):
     CNR = (mu1 - mu2) / std2
     return CNR
 
+# def SSIM(img,ref):
+#     L=np.max(ref)
+#     k1,k2=0.01,0.03
+#     c1,c2 = (k1*L)**2, (k2*L)**2
+#     mu_img=np.mean(img)
+#     mu_ref=np.mean(ref)
+#     std_img=np.std(img)
+#     std_ref=np.std(ref)
+#     cov_img_ref=covariance(img,ref)
+#
+#     return (2*mu_img*mu_ref + c1) * (2*cov_img_ref + c2) / ((mu_img**2 + mu_ref**2 + c1)*(std_ref**2 + std_img**2 + c2))
+#
+# def covariance(x, y):
+#     xbar, ybar = x.mean(), y.mean()
+#     return np.sum((x - xbar)*(y - ybar))/(len(x) - 1)
+
+
+
 def SSIM(img,ref):
-    L=np.max(ref)
-    k1,k2=0.01,0.03
-    c1,c2 = (k1*L)**2, (k2*L)**2
-    mu_img=np.mean(img)
-    mu_ref=np.mean(ref)
-    std_img=np.std(img)
-    std_ref=np.std(ref)
-    cov_img_ref=covariance(img,ref)
-
-    return (2*mu_img*mu_ref + c1) * (2*cov_img_ref + c2) / ((mu_img**2 + mu_ref**2 + c1)*(std_ref**2 + std_img**2 + c2))
-
-def covariance(x, y):
-    xbar, ybar = x.mean(), y.mean()
-    return np.sum((x - xbar)*(y - ybar))/(len(x) - 1)
+    return structural_similarity(im1=img,im2=ref)
