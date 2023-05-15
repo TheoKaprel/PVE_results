@@ -12,7 +12,10 @@ import sys
 path_root = Path(__file__).parents[1]
 sys.path.append(str(path_root))
 
-from PVE_data.Analytical_data.parameters import FWHM_b
+from PVE_data.Analytical_data.parameters import get_FWHM_b
+
+FWHM_b = get_FWHM_b(machine='ge-discovery', b=380)
+
 import utils
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -20,7 +23,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('--dir')
 @click.option('--pthref')
-@click.option('--norm', is_flag=True, default = False)
+@click.option('--norm', is_flag=True)
 @click.option('--errors', is_flag=True, default = False)
 def show_RC_curve_pt_src(dir, pthref, norm, errors):
     json_radius_file = open(os.path.join(dir, 'radius.json')).read()
@@ -118,6 +121,11 @@ def show_RC_curve_pt_src(dir, pthref, norm, errors):
 
     ax.set_title("Recovery Coefficients for different Sphere Size", fontsize=18)
 
+    print([_*FWHM_b for _ in list_size])
+    print(list_RC_noPVE_noPVC)
+    print(list_RC_PVE_PVC)
+    print(list_RC_PVE_noPVC)
+    print(list_RC_DeepPVC)
 
     if errors:
         fig_NMAE,ax_NMAE=plt.subplots()

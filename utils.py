@@ -2,6 +2,7 @@
 
 import numpy as np
 from skimage.metrics import structural_similarity
+import itk
 
 def calc_norm(img,norm):
     if (norm==False or norm==None):
@@ -64,3 +65,20 @@ def CNR(mask1, mask2, img):
 
 def SSIM(img,ref):
     return structural_similarity(im1=img,im2=ref)
+
+
+import numpy as np
+import itk
+
+def CRC(img,src,mask_src,mask_bg):
+
+    mean_act_src = np.mean(src[mask_src])
+    mean_act_img = np.mean(img[mask_src])
+
+    mean_bg_src = np.mean(src[mask_bg])
+    mean_bg_img = np.mean(img[mask_bg])
+
+    CRC = ((mean_act_img - mean_bg_img) / mean_bg_img) / ((mean_act_src - mean_bg_src) / mean_bg_src)
+
+    return CRC
+

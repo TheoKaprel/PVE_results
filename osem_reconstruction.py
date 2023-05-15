@@ -10,13 +10,14 @@ import sys
 path_root = Path(__file__).parents[1]
 sys.path.append(str(path_root))
 
-from PVE_data.Analytical_data import forwardprojection
+from PVE_data.Analytical_data.parameters import get_psf_params
 
-sigma0pve_default = forwardprojection.sigma0pve_default
-alphapve_default = forwardprojection.alphapve_default
-
-
-
+def strParamToArray(str_param):
+    array_param = np.array(str_param.split(','))
+    array_param = array_param.astype(np.float)
+    if len(array_param) == 1:
+        array_param = np.array([array_param[0].astype(np.float)] * 3)
+    return array_param[::-1]
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -25,23 +26,24 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--output', '-o', help = 'Output filename of desired type (mhd/mha)')
 @click.option('--start')
 @click.option('--like')
-@click.option('--size', type = int)
-@click.option('--spacing', type = float)
+@click.option('--size', type = str)
+@click.option('--spacing', type = str)
 @click.option('--geom', '-g')
 @click.option('--attenuationmap', '-a')
 @click.option('--beta', type = float, default = 0, show_default = True)
 @click.option('--pvc', is_flag = True, default = False, help = 'if --pvc, resolution correction')
+@click.option('--spect_system',type = str, default = "ge-discovery")
 @click.option('--nprojpersubset', type = int, default = 10, show_default = True)
 @click.option('-n','--niterations', type = int, default = 5, show_default = True)
 @click.option('--FB', 'projector_type', default = "Zeng", show_default = True)
 @click.option('--output-every', type = int)
 @click.option('--iteration-filename', help = 'If output-every is not null, iteration-filename to output intermediate iterations with %d as a placeholder for iteration number')
 @click.option('-v', '--verbose', count=True)
-def osem_reconstruction_click(input,start, output,like,size,spacing, geom,attenuationmap,beta, pvc, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
+def osem_reconstruction_click(input,start, output,like,size,spacing, geom,attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
     osem_reconstruction(input=input,start=start, outputfilename=output,like=like,size=size,spacing=spacing, geom=geom,attenuationmap=attenuationmap,
-                        beta= beta, pvc=pvc, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type, output_every=output_every, iteration_filename=iteration_filename, verbose=verbose)
+                        beta= beta, pvc=pvc,spect_system=spect_system, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type, output_every=output_every, iteration_filename=iteration_filename, verbose=verbose)
 
-def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,attenuationmap,beta, pvc, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
+def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
     if verbose>0:
         print('Begining of reconstruction ...')
 
@@ -54,21 +56,32 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,atte
     if start:
         output_image = itk.imread(start, pixelType)
     elif (size and spacing):
-        output_array = np.ones((size,size,size))
+
+        vSize = strParamToArray(size).astype(int)
+        vSpacing = strParamToArray(spacing)
+        vOffset = [(-sp__*size__ + sp__)/2 for (sp__,size__) in zip(vSpacing,vSize)]
+        output_array = np.ones(vSize)
         output_image = itk.image_from_array(output_array)
-        output_image.SetSpacing([spacing, spacing, spacing])
-        offset = (-size * spacing + spacing) / 2
-        output_image.SetOrigin([offset, offset, offset])
+        output_image.SetSpacing(vSpacing)
+        output_image.SetOrigin(vOffset)
         output_image = output_image.astype(pixelType)
 
+        # output_array = np.ones((size,size,size))
+        # output_image = itk.image_from_array(output_array)
+        # output_image.SetSpacing([spacing, spacing, spacing])
+        # offset = (-size * spacing + spacing) / 2
+        # output_image.SetOrigin([offset, offset, offset])
+        # output_image = output_image.astype(pixelType)
     else:
         like_image = itk.imread(like, pixelType)
         constant_image = rtk.ConstantImageSource[imageType].New()
         constant_image.SetSpacing(like_image.GetSpacing())
         constant_image.SetOrigin(like_image.GetOrigin())
         constant_image.SetSize(itk.size(like_image))
+        # constant_image.CopyInformation(like_image)
         constant_image.SetConstant(1)
         output_image = constant_image.GetOutput()
+        # output_image.CopyInformation(like_image)
 
     if verbose>0:
         print('Reading input projections...')
@@ -131,8 +144,9 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,atte
         BP = osem.BackProjectionType_BP_ZENG
 
         if pvc:
-            osem.SetSigmaZero(sigma0pve_default)
-            osem.SetAlpha(alphapve_default)
+            sigma0_psf, alpha_psf = get_psf_params(machine=spect_system)
+            osem.SetSigmaZero(sigma0_psf)
+            osem.SetAlpha(alpha_psf)
         else:
             osem.SetSigmaZero(0)
             osem.SetAlpha(0)

@@ -14,7 +14,7 @@ import sys
 path_root = Path(__file__).parents[1]
 sys.path.append(str(path_root))
 
-from PVE_data.Analytical_data.parameters import FWHM_b
+from PVE_data.Analytical_data.parameters import get_FWHM_b
 import utils
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -41,10 +41,11 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
                                                               'iec_rec_PVE_noPVC.mhd']]
         legend=["noPVE-noPVC", "PVE-RM", "PVE-noPVC"]
         color = ["green", "blue", "red"]
-        for one_ref in ref:
+        colors_bis = ["orange", "gold", "darkorange"]
+        for j,one_ref in enumerate(ref):
             recons_img.append(os.path.join(auto, f'iec_rec_DeepPVC_{one_ref}.mhd'))
-            legend.append(f"PVE-DeepPVC")
-            color.append("orange")
+            legend.append(f"PVE-DeepPVC-{one_ref}")
+            color.append(colors_bis[j])
 
 
     if len(legend)>0:
@@ -55,7 +56,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
     if len(color)>0:
         assert (len(color)==len(recons_img))
     else:
-        color = ['green', 'blue', 'orange', 'red', 'black', 'magenta']
+        color = ['green', 'blue', 'orange', 'red', 'black', 'magenta', 'cyan','yellow','brown','purple','pink','teal','gold','navy','olive','maroon','gray','lime','indigo','beige','turquoise']
 
     # dictionnary whith spheres labels as keys and their corresponding radius as value.
     dict_sphereslabels_radius = {
@@ -66,6 +67,9 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
     "iec_sphere_28mm": 28,
     "iec_sphere_37mm": 37,
     }
+
+    b = 380
+    FWHM_b = get_FWHM_b(machine="siemens-intevo", b=b)
 
     # open image labels
     img_labels = itk.imread(labels)
@@ -122,13 +126,16 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
         for sph_label in dict_sphereslabels_radius:
             mean_act_src = np.mean(np_src[np_labels == json_labels[sph_label]])
             mean_act_img = np.mean(np_recons_normalized[np_labels == json_labels[sph_label]])
-
             mean_bg_img = np.mean(np_recons_normalized[background_mask])
 
-            dict_sphereslabels_RC[sph_label] = (mean_act_img - mean_bg_img) / (mean_act_src - mean_bg_src)
+            dict_sphereslabels_RC[sph_label] = ((mean_act_img - mean_bg_img)/mean_bg_img) / ((mean_act_src - mean_bg_src)/mean_bg_src)
             dict_sphereslabels_CNR[sph_label] = utils.CNR(mask1=(np_labels == json_labels[sph_label]),
                                                           mask2=background_mask,
                                                           img=np_recons_normalized)
+
+        global_CNR = utils.CNR(mask1=(np_labels==6) + (np_labels==8 ) + (np_labels==12) + (np_labels==13) + (np_labels==14) + (np_labels==15),
+                               mask2 = background_mask, img = np_recons_normalized)
+        print(f'global CNR : {global_CNR}')
 
         x,y_RC,y_CNR = [],[],[]
         for sph_label in dict_sphereslabels_RC:
@@ -136,6 +143,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
             y_RC.append(dict_sphereslabels_RC[sph_label])
             y_CNR.append(dict_sphereslabels_CNR[sph_label])
 
+        print(y_RC)
         ax_RC.plot(x,y_RC, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
         ax_CNR.plot(x,y_CNR, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
 

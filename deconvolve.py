@@ -3,20 +3,20 @@ import matplotlib.pyplot as plt
 from skimage import restoration
 import itk
 
-
-img1PVE = itk.array_from_image(itk.imread('./test_deconvolution/src1proj_PVE.mhd'))[0,:,:]
-img1PVf = itk.array_from_image(itk.imread('./test_deconvolution/src1proj_PVfree.mhd'))[0,:,:]
+base="/export/home/tkaprelian/Desktop/PVE/PVE_data/datasets/"
+img1PVE = itk.array_from_image(itk.imread(base+'test_deconvolution/src1proj_PVE.mhd'))[0,:,:]
+img1PVf = itk.array_from_image(itk.imread(base+'test_deconvolution/src1proj_PVfree.mhd'))[0,:,:]
 psf1 = restoration.richardson_lucy(img1PVE, img1PVf, filter_epsilon=0.00001)
 
-img1DeepPVC = itk.array_from_image(itk.imread('./test_deconvolution/src1proj_DeepPVC.mhd'))[0,:,:]
+img1DeepPVC = itk.array_from_image(itk.imread(base+'test_deconvolution/src1proj_DeepPVC.mhd'))[0,:,:]
 psf1Deep= restoration.richardson_lucy(img1PVE, img1DeepPVC, filter_epsilon=0.00001)
 
 
-img2PVE = itk.array_from_image(itk.imread('./test_deconvolution/src2proj_PVE.mhd'))[0,:,:]
-img2PVf = itk.array_from_image(itk.imread('./test_deconvolution/src2proj_PVfree.mhd'))[0,:,:]
+img2PVE = itk.array_from_image(itk.imread(base+'test_deconvolution/src2proj_PVE.mhd'))[0,:,:]
+img2PVf = itk.array_from_image(itk.imread(base+'test_deconvolution/src2proj_PVfree.mhd'))[0,:,:]
 psf2 = restoration.richardson_lucy(img2PVE,img2PVf, filter_epsilon=0.00001)
 
-img2DeepPVC = itk.array_from_image(itk.imread('./test_deconvolution/src2proj_DeepPVC.mhd'))[0,:,:]
+img2DeepPVC = itk.array_from_image(itk.imread(base+'test_deconvolution/src2proj_DeepPVC.mhd'))[0,:,:]
 psf2Deep= restoration.richardson_lucy(img2PVE, img2DeepPVC, filter_epsilon=0.00001)
 
 
