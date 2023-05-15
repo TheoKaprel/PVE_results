@@ -29,6 +29,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--size', type = str)
 @click.option('--spacing', type = str)
 @click.option('--geom', '-g')
+@click.option('--sid', type = float)
 @click.option('--attenuationmap', '-a')
 @click.option('--beta', type = float, default = 0, show_default = True)
 @click.option('--pvc', is_flag = True, default = False, help = 'if --pvc, resolution correction')
@@ -39,11 +40,11 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--output-every', type = int)
 @click.option('--iteration-filename', help = 'If output-every is not null, iteration-filename to output intermediate iterations with %d as a placeholder for iteration number')
 @click.option('-v', '--verbose', count=True)
-def osem_reconstruction_click(input,start, output,like,size,spacing, geom,attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
-    osem_reconstruction(input=input,start=start, outputfilename=output,like=like,size=size,spacing=spacing, geom=geom,attenuationmap=attenuationmap,
+def osem_reconstruction_click(input,start, output,like,size,spacing, geom, sid,attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
+    osem_reconstruction(input=input,start=start, outputfilename=output,like=like,size=size,spacing=spacing, geom=geom,sid=sid,attenuationmap=attenuationmap,
                         beta= beta, pvc=pvc,spect_system=spect_system, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type, output_every=output_every, iteration_filename=iteration_filename, verbose=verbose)
 
-def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
+def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid, attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
     if verbose>0:
         print('Begining of reconstruction ...')
 
@@ -65,40 +66,32 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,atte
         output_image.SetSpacing(vSpacing)
         output_image.SetOrigin(vOffset)
         output_image = output_image.astype(pixelType)
-
-        # output_array = np.ones((size,size,size))
-        # output_image = itk.image_from_array(output_array)
-        # output_image.SetSpacing([spacing, spacing, spacing])
-        # offset = (-size * spacing + spacing) / 2
-        # output_image.SetOrigin([offset, offset, offset])
-        # output_image = output_image.astype(pixelType)
     else:
         like_image = itk.imread(like, pixelType)
         constant_image = rtk.ConstantImageSource[imageType].New()
         constant_image.SetSpacing(like_image.GetSpacing())
         constant_image.SetOrigin(like_image.GetOrigin())
         constant_image.SetSize(itk.size(like_image))
-        # constant_image.CopyInformation(like_image)
         constant_image.SetConstant(1)
         output_image = constant_image.GetOutput()
-        # output_image.CopyInformation(like_image)
-
     if verbose>0:
         print('Reading input projections...')
     projections = itk.imread(input, pixelType)
     nproj = itk.size(projections)[2]
     if verbose>0:
         print(f'{nproj} projections')
-        print('Reading geometry file ...')
 
     if geom:
+        print('Reading geometry file ...')
         xmlReader = rtk.ThreeDCircularProjectionGeometryXMLFileReader.New()
         xmlReader.SetFilename(geom)
         xmlReader.GenerateOutputInformation()
         geometry = xmlReader.GetOutputObject()
         if verbose>0:
             print(geom + ' is open!')
-    else:
+    elif sid:
+        print(f'Creating geometry file : nprojs = {nproj} / sid = {sid}')
+
         if projector_type=="Zeng":
             Offset = projections.GetOrigin()
         else:
@@ -107,7 +100,7 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,atte
         list_angles = np.linspace(0,360,nproj+1)
         geometry = rtk.ThreeDCircularProjectionGeometry.New()
         for i in range(nproj):
-            geometry.AddProjection(380, 0, list_angles[i], Offset[0], Offset[1])
+            geometry.AddProjection(sid, 0, list_angles[i], Offset[0], Offset[1])
         if verbose>0:
             print(f'Created geom file with {nproj} angles and Offset = {Offset[0]},{Offset[1]}')
 
