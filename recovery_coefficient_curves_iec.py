@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import click
+
 import itk
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,7 +8,7 @@ import json
 import os
 from pathlib import Path
 from matplotlib.ticker import FormatStrFormatter
-
+import argparse
 import sys
 
 path_root = Path(__file__).parents[1]
@@ -17,19 +17,21 @@ sys.path.append(str(path_root))
 from PVE_data.Analytical_data.parameters import get_FWHM_b
 import utils
 
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.option('--labels', help = 'ex: iec_labels.mhd. ie image containing the label of the object in each voxel. if labels-json is not provided, it is assumed that iec_labels.json is in the same folder as iec_labels.mhd')
-@click.option('--labels-json')
-@click.option('--source')
-@click.option('--i', 'recons_img', multiple = True)
-@click.option('-l','--legend', multiple = True)
-@click.option('-c','--color', multiple = True)
-@click.option('--norm')
-@click.option('--errors', is_flag = True, default = False)
-@click.option('--auto')
-@click.option('--ref', multiple=True)
-@click.option('--mm', default='4')
+def main():
+    print(args)
+    show_RC_curve(labels=args.labels,
+                  labels_json=args.labels_json,
+                  source = args.source,
+                  recons_img=args.images,
+                  legend=args.l,
+                  color = args.c,
+                  norm=args.norm,
+                  errors=args.errors,
+                  auto = args.auto,
+                  ref = args.ref,
+                  mm = args.mm)
+
+
 def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,errors, auto, ref, mm):
     if auto is not None:
         labels=os.path.join(auto, f'iec_labels_{mm}mm_c_rot.mhd')
@@ -68,7 +70,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
     "iec_sphere_37mm": 37,
     }
 
-    b = 380
+    b = 100
     FWHM_b = get_FWHM_b(machine="siemens-intevo", b=b)
 
     # open image labels
@@ -105,10 +107,13 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
     mean_bg_src = np.mean(np_src[background_mask])
 
     fig,ax_RC = plt.subplots()
+    fig,ax_CRC = plt.subplots()
     fig,ax_CNR = plt.subplots()
-    ax_RC.set_xlabel('Sphere Diameter / FWHM', fontsize=18)
+    ax_RC.set_xlabel('Sphere Diameter / FWHM (10cm)', fontsize=18)
+    ax_CRC.set_xlabel('Sphere Diameter / FWHM (10cm)', fontsize=18)
     ax_RC.set_ylabel('RC', fontsize=18)
-    ax_CNR.set_xlabel('Sphere Diameter / FWHM', fontsize=18)
+    ax_CRC.set_ylabel('CRC', fontsize=18)
+    ax_CNR.set_xlabel('Sphere Diameter / FWHM (10cm)', fontsize=18)
     ax_CNR.set_ylabel('CNR', fontsize=18)
     plt.rcParams["savefig.directory"] = os.getcwd()
 
@@ -122,13 +127,15 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
         np_recons_normalized = np_recons / np_recons_norm
 
         dict_sphereslabels_RC = {}
+        dict_sphereslabels_CRC = {}
         dict_sphereslabels_CNR={}
         for sph_label in dict_sphereslabels_radius:
             mean_act_src = np.mean(np_src[np_labels == json_labels[sph_label]])
             mean_act_img = np.mean(np_recons_normalized[np_labels == json_labels[sph_label]])
             mean_bg_img = np.mean(np_recons_normalized[background_mask])
 
-            dict_sphereslabels_RC[sph_label] = ((mean_act_img - mean_bg_img)/mean_bg_img) / ((mean_act_src - mean_bg_src)/mean_bg_src)
+            dict_sphereslabels_RC[sph_label] = mean_act_img / mean_act_src
+            dict_sphereslabels_CRC[sph_label] = ((mean_act_img - mean_bg_img)/mean_bg_img) / ((mean_act_src - mean_bg_src)/mean_bg_src)
             dict_sphereslabels_CNR[sph_label] = utils.CNR(mask1=(np_labels == json_labels[sph_label]),
                                                           mask2=background_mask,
                                                           img=np_recons_normalized)
@@ -137,14 +144,16 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
                                mask2 = background_mask, img = np_recons_normalized)
         print(f'global CNR : {global_CNR}')
 
-        x,y_RC,y_CNR = [],[],[]
+        x,y_RC,y_CRC,y_CNR = [],[],[],[]
         for sph_label in dict_sphereslabels_RC:
             x.append(dict_sphereslabels_radius[sph_label] / FWHM_b )
             y_RC.append(dict_sphereslabels_RC[sph_label])
+            y_CRC.append(dict_sphereslabels_CRC[sph_label])
             y_CNR.append(dict_sphereslabels_CNR[sph_label])
 
         print(y_RC)
         ax_RC.plot(x,y_RC, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
+        ax_CRC.plot(x,y_CRC, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
         ax_CNR.plot(x,y_CNR, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
 
         if errors:
@@ -159,6 +168,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
     # ax_RC.set_title("Recovery Coefficients for the IEC phantom", fontsize = 18)
     ax_CNR.set_title("Contrast to Noise Ratio for IEC phantom", fontsize = 18)
     ax_RC.legend(fontsize=12)
+    ax_CRC.legend(fontsize=12)
     ax_CNR.legend()
     # plt.legend()
 
@@ -192,4 +202,20 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
 
 
 if __name__ == '__main__':
-    show_RC_curve()
+
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("images", nargs='+')
+    parser.add_argument("--labels")
+    parser.add_argument("--labels-json")
+    parser.add_argument("--source")
+    parser.add_argument("-l", nargs='+')
+    parser.add_argument("-c", nargs='+', default = [])
+    parser.add_argument("--norm")
+    parser.add_argument("--errors",action='store_true')
+    parser.add_argument("--auto")
+    parser.add_argument("--ref")
+    parser.add_argument("--mm",type=int,default=4)
+    args = parser.parse_args()
+
+
+    main()
