@@ -31,10 +31,11 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
     colors=['black', 'green', 'blue', 'orange', 'red']
 
     source_array = itk.array_from_image(itk.imread(source))
-
+    print(source_array.shape)
 
     if slice:
-        fig_img,ax_img = plt.subplots(1,len(images)+1)
+        fig_img,ax_img = plt.subplots(2,2)
+        ax_img = ax_img.flatten()
 
         norm_src = utils.calc_norm(source_array, norm=norm)
         stack_img = [source_array / norm_src]
@@ -45,15 +46,17 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
             stack_img.append(img_array / norm_img)
 
 
-        vmin_ = min([np.min(sl[slice,:,:]) for sl in stack_img])
-        vmax_ = max([np.max(sl[slice,:,:]) for sl in stack_img])
+        vmin_ = min([np.min(sl[:,slice,:]) for sl in stack_img])
+        vmax_ = max([np.max(sl[:,slice,:]) for sl in stack_img])
 
 
-        imsh = ax_img[0].imshow(stack_img[0][slice,:,:], vmin = vmin_, vmax = vmax_)
-        ax_img[0].set_title(source)
+        imsh = ax_img[0].imshow(stack_img[0][:,slice,:], vmin = vmin_, vmax = vmax_)
+        ax_img[0].set_title('source')
+        ax_img[0].axis('off')
         for k in range(len(images)):
-            imsh = ax_img[k+1].imshow(stack_img[k+1][slice,:,:], vmin = vmin_, vmax = vmax_)
+            imsh = ax_img[k+1].imshow(stack_img[k+1][:,slice,:], vmin = vmin_, vmax = vmax_)
             ax_img[k+1].set_title(legends[k])
+            ax_img[k+1].axis('off')
 
 
         fig_img.colorbar(imsh, ax=ax_img)

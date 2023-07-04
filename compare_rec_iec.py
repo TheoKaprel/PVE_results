@@ -23,12 +23,14 @@ spheres_loc = {1: {'l':41, 'c': [44,45]},
 
 
 def main():
-    slicei=38
+    slicei=118
     print(args)
 
-    vmin,vmax = 0,8
+    
 
     src = itk.array_from_image(itk.imread(args.source))
+    
+    vmin,vmax = 0,src.max()*1.30
 
     fig_img, ax_img = plt.subplots(2,3)
     ax_img[0,0].imshow(src[:,slicei,:], vmin=vmin, vmax=vmax)
@@ -57,7 +59,7 @@ def main():
         else:
             ax_prof.plot(sph_abs, src[loc['l'], slicei, columns], linestyle='dashed', color='black')
 
-    colors = ['green', 'blue', 'orange', 'red']
+    colors = ['green', 'blue', 'orange', 'red', 'pink']
     legends = args.legends.split(',')
 
     for i,rec_img in enumerate(args.images):

@@ -33,7 +33,7 @@ def illustration(sources_paths):
         rec_array_img = itk.array_from_image(itk.imread(rec_img_fn))
 
         RC = (np.max(rec_array_img[src_array_img==np.max(src_array_img)])) / 1
-        list_size.append(2*size/FWHM)
+        list_size.append(size)
         list_RC.append(RC)
 
         ax_img[0,k].imshow(src_array_img[63,:,:], cmap = 'Greys', vmin = 0, vmax = 1)
@@ -58,7 +58,7 @@ def illustration(sources_paths):
 
     fig,ax = plt.subplots()
     ax.plot(list_size, list_RC, linewidth = 2, marker = 'o', color = 'black')
-    ax.set_xlabel('Size / FWHM', fontsize=18)
+    ax.set_xlabel('Source Diameter', fontsize=18)
     ax.set_ylabel('Recovery Coefficient', fontsize=18)
     plt.show()
 

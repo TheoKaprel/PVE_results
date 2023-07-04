@@ -92,9 +92,12 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
     json_labels = json.loads(json_labels_file)
 
     # background mask
-    background_mask = (np_labels>1)
-    for sph in dict_sphereslabels_radius:
-        background_mask = background_mask * (np_labels!=json_labels[sph])
+    if 'background' in json_labels.keys():
+        background_mask = (np_labels==json_labels['background'])
+    else:
+        background_mask = (np_labels>1)
+        for sph in dict_sphereslabels_radius:
+            background_mask = background_mask * (np_labels!=json_labels[sph])
 
     # open source image
     img_src = itk.imread(source)
@@ -109,12 +112,15 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
     fig,ax_RC = plt.subplots()
     fig,ax_CRC = plt.subplots()
     fig,ax_CNR = plt.subplots()
+    fig,ax_RMSD = plt.subplots()
     ax_RC.set_xlabel('Sphere Diameter / FWHM (10cm)', fontsize=18)
     ax_CRC.set_xlabel('Sphere Diameter / FWHM (10cm)', fontsize=18)
     ax_RC.set_ylabel('RC', fontsize=18)
     ax_CRC.set_ylabel('CRC', fontsize=18)
     ax_CNR.set_xlabel('Sphere Diameter / FWHM (10cm)', fontsize=18)
     ax_CNR.set_ylabel('CNR', fontsize=18)
+    ax_RMSD.set_xlabel('Sphere Diameter / FWHM (10cm)', fontsize=18)
+    ax_RMSD.set_ylabel('RMSD', fontsize=18)
     plt.rcParams["savefig.directory"] = os.getcwd()
 
     if errors:
@@ -129,6 +135,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
         dict_sphereslabels_RC = {}
         dict_sphereslabels_CRC = {}
         dict_sphereslabels_CNR={}
+        dict_sphereslabels_RMSD={}
         for sph_label in dict_sphereslabels_radius:
             mean_act_src = np.mean(np_src[np_labels == json_labels[sph_label]])
             mean_act_img = np.mean(np_recons_normalized[np_labels == json_labels[sph_label]])
@@ -139,24 +146,29 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
             dict_sphereslabels_CNR[sph_label] = utils.CNR(mask1=(np_labels == json_labels[sph_label]),
                                                           mask2=background_mask,
                                                           img=np_recons_normalized)
+            # dict_sphereslabels_RMSD[sph_label] = utils.RMS(mask=(np_labels==json_labels[sph_label]), img=np_recons_normalized,src = np_src)
+            dict_sphereslabels_RMSD[sph_label] = utils.RMS(mask=(np_labels==json_labels[sph_label]), img=np_recons_normalized)
 
         global_CNR = utils.CNR(mask1=(np_labels==6) + (np_labels==8 ) + (np_labels==12) + (np_labels==13) + (np_labels==14) + (np_labels==15),
                                mask2 = background_mask, img = np_recons_normalized)
         print(f'global CNR : {global_CNR}')
 
-        x,y_RC,y_CRC,y_CNR = [],[],[],[]
+        x,y_RC,y_CRC,y_CNR,y_RMSD = [],[],[],[],[]
         for sph_label in dict_sphereslabels_RC:
             x.append(dict_sphereslabels_radius[sph_label] / FWHM_b )
             y_RC.append(dict_sphereslabels_RC[sph_label])
             y_CRC.append(dict_sphereslabels_CRC[sph_label])
             y_CNR.append(dict_sphereslabels_CNR[sph_label])
+            y_RMSD.append(dict_sphereslabels_RMSD[sph_label])
 
         print(y_RC)
         ax_RC.plot(x,y_RC, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
         ax_CRC.plot(x,y_CRC, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
         ax_CNR.plot(x,y_CNR, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
+        ax_RMSD.plot(x,y_RMSD, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
 
-        if errors:
+        # if (errors and img_num!=3):
+        if (errors):
             dict_err['NMAE'].append(utils.NMAE(img=np_recons_normalized,ref=np_src))
             dict_err['NRMSE'].append(utils.NRMSE(img=np_recons_normalized,ref=np_src))
             dict_err['PSNR'].append(utils.PSNR(img=np_recons_normalized,ref=np_src))
@@ -170,11 +182,15 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
     ax_RC.legend(fontsize=12)
     ax_CRC.legend(fontsize=12)
     ax_CNR.legend()
+    ax_RMSD.legend()
     # plt.legend()
 
     if errors:
-        colors=['grey','black', 'black', 'black']
+        colors = ['grey']
+        for k in range(len(dict_err['labels'])-1):
+            colors.append('black')
         fig_e, ax_e = plt.subplots(2, 2, figsize=(20,20))
+        # dict_err['labels'] = [l.split('(') for l in dict_err['labels']]
         ax_e[0,0].bar([k for k in range(len(dict_err['labels']))],dict_err['NMAE'], tick_label = dict_err['labels'], color = colors)
         ax_e[0,0].set_ylabel('NMAE', fontsize = 20, weight="bold")
         ax_e[0,1].bar([k for k in range(len(dict_err['labels']))],dict_err['NRMSE'], tick_label = dict_err['labels'], color = colors)
@@ -183,7 +199,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
         ax_e[1,0].set_ylabel('PSNR', fontsize = 20, weight="bold")
         ax_e[1,1].bar([k for k in range(len(dict_err['labels']))],dict_err['SSIM'], tick_label = dict_err['labels'], color = colors)
         ax_e[1,1].set_ylabel('SSIM', fontsize = 20, weight="bold")
-        font_prop={'weight' : 'bold', 'size' : 15, }
+        font_prop={'weight' : 'bold', 'size' : 12, }
         for i in range(2):
             for j in range(2):
                 ax_e[i,j].set_xticklabels(ax_e[i,j].get_xticklabels(), font_prop)

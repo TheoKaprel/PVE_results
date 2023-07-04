@@ -28,13 +28,19 @@ def print_hi(pth, network, layer):
     else:
         values = network_dict[layer]
         print(values.shape)
+        # for _ in range(3):
+        #     i_ = np.random.randint(0,values.shape[0])
+        #     for __ in range(3):
+        #         i__ = np.random.randint(0, values.shape[1])
+        #         fig,ax = plt.subplots()
+        #         ax.imshow(values[i_,i__,:,:].detach().cpu().numpy())
 
-        for _ in range(3):
-            i_ = np.random.randint(0,values.shape[0])
-            for __ in range(3):
-                i__ = np.random.randint(0, values.shape[1])
-                fig,ax = plt.subplots()
-                ax.imshow(values[i_,i__,:,:].detach().cpu().numpy())
+        for c in range(3):
+            fig,ax = plt.subplots(2,4)
+            ax_r = ax.ravel()
+            for i in range(6):
+                    ax_r[i].imshow(values[c,i,:,:].detach().cpu().numpy())
+
         plt.show()
 
 
