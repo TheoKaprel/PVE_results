@@ -13,6 +13,7 @@ def calc_norm(img,norm):
         return img.sum()
     elif norm == "act":
         return img.sum()/7600691.174000002
+        # return img.sum()/459877.71875
     else:
         return img.max()
 
@@ -50,6 +51,9 @@ def CNR(mask1, mask2, img):
 
 def local_RMSE(mask,img,src): # https://en.wikipedia.org/wiki/Root-mean-square_deviation
     return np.sqrt(np.sum((img[mask]-src[mask])**2)/np.sum(mask))
+
+def local_NMAE(mask,img,src): # https://en.wikipedia.org/wiki/Root-mean-square_deviation
+    return (np.mean(np.abs(img[mask]-src[mask])))/np.mean(np.abs(src[mask]))
 
 def RMS(mask,img):
     return np.std(img[mask])/np.mean(img[mask])

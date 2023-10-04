@@ -23,7 +23,7 @@ spheres_loc = {1: {'l':41, 'c': [44,45]},
 
 
 def main():
-    slicei=118
+    slicei=150
     print(args)
 
     
@@ -32,8 +32,9 @@ def main():
     
     vmin,vmax = 0,src.max()*1.30
 
-    fig_img, ax_img = plt.subplots(2,3)
-    ax_img[0,0].imshow(src[:,slicei,:], vmin=vmin, vmax=vmax)
+    # fig_img, ax_img = plt.subplots(2,3)
+    # ax_img[0,0].imshow(src[:,slicei,:], vmin=vmin, vmax=vmax)
+    fig_img, ax_img = plt.subplots(2,2)
     ax_img[0,0].axis('off')
     for (rec_img_fn, ax) in zip(args.images, ax_img[:,1:].reshape(-1)):
         rec_img = itk.array_from_image(itk.imread(rec_img_fn))

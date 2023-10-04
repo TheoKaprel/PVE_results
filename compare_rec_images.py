@@ -92,7 +92,7 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
             nmae = mae / np.mean(np.abs(src))
             lnmae.append(nmae)
 
-        ax_mse.bar([k for k in range(len(images))],lrmse, tick_label = legends[1:], color = 'black')
+        ax_mse.bar([k for k in range(len(images))],lrmse, tick_label = legends, color = 'black')
         ax_mse.set_ylabel('NRMSE', fontsize = 20)
         # ax_mse[1].bar([k for k in range(len(images))],lnmae, tick_label = legends[1:], color = 'black')
         # ax_mse[1].set_ylabel('NMAE', fontsize = 20)

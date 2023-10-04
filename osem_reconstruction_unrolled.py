@@ -37,14 +37,15 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--nprojpersubset', type = int, default = 10, show_default = True)
 @click.option('-n','--niterations', type = int, default = 5, show_default = True)
 @click.option('--FB', 'projector_type', default = "Zeng", show_default = True)
+@click.option('--regularization', '-r')
 @click.option('--output-every', type = int)
 @click.option('--iteration-filename', help = 'If output-every is not null, iteration-filename to output intermediate iterations with %d as a placeholder for iteration number')
 @click.option('-v', '--verbose', count=True)
-def osem_reconstruction_click(input,start, output,like,size,spacing, geom, sid,attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
+def osem_reconstruction_click(input,start, output,like,size,spacing, geom, sid,attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type,regularization, output_every, iteration_filename, verbose):
     osem_reconstruction(input=input,start=start, outputfilename=output,like=like,size=size,spacing=spacing, geom=geom,sid=sid,attenuationmap=attenuationmap,
-                        beta= beta, pvc=pvc,spect_system=spect_system, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type, output_every=output_every, iteration_filename=iteration_filename, verbose=verbose)
+                        beta= beta, pvc=pvc,spect_system=spect_system, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type,regularization=regularization, output_every=output_every, iteration_filename=iteration_filename, verbose=verbose)
 
-def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid, attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
+def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid, attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type,regularization, output_every, iteration_filename, verbose):
     if verbose>0:
         print('Begining of reconstruction ...')
 
@@ -120,14 +121,11 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid,
     OSEMType = rtk.OSEMConeBeamReconstructionFilter[imageType, imageType]
     osem = OSEMType.New()
     osem.SetInput(0, output_image)
-    output_0_ = np.zeros(np.array(itk.size(output_image)))
-    output_0 = itk.image_from_array(output_0_).astype(pixelType)
-    output_0.CopyInformation(output_image)
     osem.SetInput(1, projections)
 
     osem.SetGeometry(geometry)
 
-    osem.SetNumberOfIterations(niterations)
+    osem.SetNumberOfIterations(1)
     osem.SetNumberOfProjectionsPerSubset(nprojpersubset)
 
     osem.SetBetaRegularization(beta)
@@ -135,12 +133,14 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid,
     if att_corr:
         osem.SetInput(2, attenuation_map)
 
+    sigma0_psf, alpha_psf = get_psf_params(machine=spect_system)
+
     if (projector_type=='Zeng'):
         FP = osem.ForwardProjectionType_FP_ZENG
         BP = osem.BackProjectionType_BP_ZENG
 
         if pvc:
-            sigma0_psf, alpha_psf = get_psf_params(machine=spect_system)
+
             osem.SetSigmaZero(sigma0_psf)
             osem.SetAlpha(alpha_psf)
         else:
@@ -153,41 +153,62 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid,
     osem.SetForwardProjectionFilter(FP)
     osem.SetBackProjectionFilter(BP)
 
-    global iter
-    iter = 0
-    def callback():
-        global iter
-        iter+=1
-        if (output_every and iter%output_every)==0:
-            output_iter = osem.GetOutput()
-            itk.imwrite(output_iter, iteration_filename.replace('%d', str(iter)))
-            osem.GraftOutput(output_0)
+    # normalisation image
+    # ones_projections_np = np.ones(np.array(itk.size(projections)))
+    ones_projections_np = np.ones(itk.array_from_image(projections).shape)
+    ones_projections = itk.image_from_array(ones_projections_np).astype(pixelType)
+    ones_projections.CopyInformation(projections)
 
-        if verbose>0:
-            print(f'end of iteration {iter}')
+    output_0_np = np.zeros(itk.array_from_image(output_image).shape)
+    output_0 = itk.image_from_array(output_0_np).astype(pixelType)
+    output_0.CopyInformation(output_image)
 
-    if output_every:
-        if iteration_filename:
-            try:
-                assert ('%d' in iteration_filename)
-            except:
-                print(f'Error in iteration filename {iteration_filename}. Should contain a %d to be replaced by the iteration number')
-                exit(0)
-        else:
-            iteration_filename = outputfilename.replace('.mh', '_%d.mh')
-    osem.AddObserver(itk.IterationEvent(), callback)
+    back_projector = rtk.ZengBackProjectionImageFilter.New()
+    back_projector.SetInput(0, output_0)
+    back_projector.SetInput(1, ones_projections)
+    back_projector.SetGeometry(geometry)
+    back_projector.SetSigmaZero(sigma0_psf)
+    back_projector.SetAlpha(alpha_psf)
+    back_projector.Update()
+    output_normalization_volume = back_projector.GetOutput()
+    output_normalization_volume.DisconnectPipeline()
+    # itk.imwrite(output_normalization_volume, 'norm.mhd')
+    output_normalization_volume_np = itk.array_from_image(output_normalization_volume)
 
-    print(osem.__dir__())
-
+    # Regularization image
+    regul_img = itk.imread(regularization)
+    regul_np = itk.array_from_image(regul_img)
+    gamma = 0.01
+    delta = 1./(gamma * output_normalization_volume_np)
 
     if verbose>0:
         print('Reconstruction ...')
-    osem.Update()
+
+    global iter
+    iter = 1
+    while iter <= niterations:
+
+        osem.Update()
+        output_image = osem.GetOutput()
+        output_image.DisconnectPipeline()
+
+        # REGULARIZATION
+        output_image_EM = itk.array_from_image(output_image)
+        output_regularized_np = (2 * output_image_EM) / ( (1 - delta * regul_np) + np.sqrt((1 - delta * regul_np)**2 + 4 * delta * output_image_EM))
+        output_regularized = itk.image_from_array(output_regularized_np)
+        output_regularized.CopyInformation(output_image)
+
+        osem.SetInput(0, output_regularized)
+
+        itk.imwrite(output_regularized, iteration_filename.replace('%d', str(iter)))
+        if verbose>0:
+            print(f'end of iteration {iter}')
+        iter += 1
 
     # Writer
     if verbose>0:
         print("Writing output image...")
-    itk.imwrite(osem.GetOutput(), outputfilename)
+    itk.imwrite(output_image, outputfilename)
 
     if verbose>0:
         print('Done!')
