@@ -38,14 +38,15 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('-n','--niterations', type = int, default = 5, show_default = True)
 @click.option('--FB', 'projector_type', default = "Zeng", show_default = True)
 @click.option('--regularization', '-r')
+@click.option('--gamma', type=float)
 @click.option('--output-every', type = int)
 @click.option('--iteration-filename', help = 'If output-every is not null, iteration-filename to output intermediate iterations with %d as a placeholder for iteration number')
 @click.option('-v', '--verbose', count=True)
-def osem_reconstruction_click(input,start, output,like,size,spacing, geom, sid,attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type,regularization, output_every, iteration_filename, verbose):
+def osem_reconstruction_click(input,start, output,like,size,spacing, geom, sid,attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type,regularization,gamma, output_every, iteration_filename, verbose):
     osem_reconstruction(input=input,start=start, outputfilename=output,like=like,size=size,spacing=spacing, geom=geom,sid=sid,attenuationmap=attenuationmap,
-                        beta= beta, pvc=pvc,spect_system=spect_system, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type,regularization=regularization, output_every=output_every, iteration_filename=iteration_filename, verbose=verbose)
+                        beta= beta, pvc=pvc,spect_system=spect_system, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type,regularization=regularization,gamma=gamma, output_every=output_every, iteration_filename=iteration_filename, verbose=verbose)
 
-def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid, attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type,regularization, output_every, iteration_filename, verbose):
+def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid, attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type,regularization,gamma, output_every, iteration_filename, verbose):
     if verbose>0:
         print('Begining of reconstruction ...')
 
@@ -178,8 +179,8 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid,
     # Regularization image
     regul_img = itk.imread(regularization)
     regul_np = itk.array_from_image(regul_img)
-    gamma = 0.01
-    delta = 1./(gamma * output_normalization_volume_np)
+    tol = 1e-12
+    delta = 1./(gamma * output_normalization_volume_np + tol)
 
     if verbose>0:
         print('Reconstruction ...')
