@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os.path
 
 import click
 import itk
@@ -39,12 +40,13 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--FB', 'projector_type', default = "Zeng", show_default = True)
 @click.option('--output-every', type = int)
 @click.option('--iteration-filename', help = 'If output-every is not null, iteration-filename to output intermediate iterations with %d as a placeholder for iteration number')
+@click.option('--iteration-folder', help = 'If output-every is not null, iteration-folder to output intermediate iterations with same filename as output but output_5.mhd')
 @click.option('-v', '--verbose', count=True)
-def osem_reconstruction_click(input,start, output,like,size,spacing, geom, sid,attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
+def osem_reconstruction_click(input,start, output,like,size,spacing, geom, sid,attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename,iteration_folder, verbose):
     osem_reconstruction(input=input,start=start, outputfilename=output,like=like,size=size,spacing=spacing, geom=geom,sid=sid,attenuationmap=attenuationmap,
-                        beta= beta, pvc=pvc,spect_system=spect_system, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type, output_every=output_every, iteration_filename=iteration_filename, verbose=verbose)
+                        beta= beta, pvc=pvc,spect_system=spect_system, nprojpersubset=nprojpersubset, niterations=niterations, projector_type=projector_type, output_every=output_every, iteration_filename=iteration_filename,iteration_folder=iteration_folder, verbose=verbose)
 
-def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid, attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename, verbose):
+def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid, attenuationmap,beta, pvc,spect_system, nprojpersubset, niterations, projector_type, output_every, iteration_filename,iteration_folder, verbose):
     if verbose>0:
         print('Begining of reconstruction ...')
 
@@ -161,7 +163,6 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid,
         if (output_every and iter%output_every)==0:
             output_iter = osem.GetOutput()
             itk.imwrite(output_iter, iteration_filename.replace('%d', str(iter)))
-            osem.GraftOutput(output_0)
 
         if verbose>0:
             print(f'end of iteration {iter}')
@@ -173,12 +174,12 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid,
             except:
                 print(f'Error in iteration filename {iteration_filename}. Should contain a %d to be replaced by the iteration number')
                 exit(0)
+        elif iteration_folder:
+            outputbasename=os.path.basename(outputfilename)
+            iteration_filename = os.path.join(iteration_folder,outputbasename.replace('.mh', '_%d.mh'))
         else:
             iteration_filename = outputfilename.replace('.mh', '_%d.mh')
     osem.AddObserver(itk.IterationEvent(), callback)
-
-    print(osem.__dir__())
-
 
     if verbose>0:
         print('Reconstruction ...')
