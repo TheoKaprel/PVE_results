@@ -24,11 +24,13 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
     if legend:
         assert(len(images) == len(legend))
         legends = list(legend)
+        legends = ['src'] + legends
     else:
         legends = list(images)
         legends=['source', 'noPVE-noPVC', 'PVE-RM', 'PVE-DeepPVC', 'PVE-noPVC']
 
-    colors=['black', 'green', 'blue', 'orange', 'red']
+    colors=['black', 'green', 'blue', 'orange', 'red', 'grey', 'blueviolet']
+    # colors=['black','blue', 'orange']
 
     source_array = itk.array_from_image(itk.imread(source))
     print(source_array.shape)
@@ -46,17 +48,18 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
             stack_img.append(img_array / norm_img)
 
 
-        vmin_ = min([np.min(sl[:,slice,:]) for sl in stack_img])
-        vmax_ = max([np.max(sl[:,slice,:]) for sl in stack_img])
+        # vmin_ = min([np.min(sl[slice,:,:]) for sl in stack_img])
+        # vmax_ = max([np.max(sl[slice,:,:]) for sl in stack_img])
 
 
-        imsh = ax_img[0].imshow(stack_img[0][:,slice,:], vmin = vmin_, vmax = vmax_)
-        ax_img[0].set_title('source')
-        ax_img[0].axis('off')
-        for k in range(len(images)):
-            imsh = ax_img[k+1].imshow(stack_img[k+1][:,slice,:], vmin = vmin_, vmax = vmax_)
-            ax_img[k+1].set_title(legends[k])
-            ax_img[k+1].axis('off')
+        vmin_,vmax_ = 0, 2e-5
+
+
+        for k in range(len(stack_img)):
+            # imsh = ax_img[k].imshow(stack_img[k][slice,:,:], vmin = vmin_, vmax = vmax_)
+            imsh = ax_img[k].imshow(stack_img[k][:,slice,:], vmin = vmin_, vmax = vmax_)
+            ax_img[k].set_title(legends[k])
+            ax_img[k].axis('off')
 
 
         fig_img.colorbar(imsh, ax=ax_img)
@@ -65,12 +68,12 @@ def comp_rec_images(source,images,legend, slice, profile, mse, norm):
 
     if profile:
         fig_prof,ax_prof = plt.subplots()
-        ax_prof.plot(stack_img[0][slice,profile, :], '-',marker='.', markersize=5, label=legends[0], color=colors[0], linewidth=1.7)
-        for k in range(len(images)):
-            ax_prof.plot(stack_img[k+1][slice,profile,:], '-',marker='.', markersize=5,label = legends[k+1], color=colors[k+1], linewidth=1.7)
+        for k in range(len(stack_img)):
+            # ax_prof.plot(stack_img[k][slice,profile,:], '-',marker='.', markersize=5,label = legends[k], color=colors[k], linewidth=1.7)
+            ax_prof.plot(stack_img[k][profile,slice,:], '-',marker='.', markersize=5,label = legends[k], color=colors[k], linewidth=1.7)
 
         ax_prof.legend(fontsize=12)
-        ax_prof.set_title("Sphere with 48 mm diameter",fontsize=18)
+        ax_prof.set_title("profile",fontsize=18)
 
     if mse:
         fig_mse,ax_mse = plt.subplots()

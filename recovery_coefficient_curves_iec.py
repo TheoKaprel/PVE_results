@@ -115,6 +115,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
     fig,ax_CNR = plt.subplots()
     fig,ax_RMSD = plt.subplots()
     fig,ax_RMSE = plt.subplots()
+    fig,ax_mAC = plt.subplots()
     ax_RC.set_xlabel('Sphere Diameter / FWHM (280mm)', fontsize=18)
     ax_CRC.set_xlabel('Sphere Diameter / FWHM (280mm)', fontsize=18)
     ax_RC.set_ylabel('RC', fontsize=18)
@@ -125,6 +126,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
     ax_RMSE.set_xlabel('Sphere Diameter / FWHM (280mm)', fontsize=18)
     ax_RMSD.set_ylabel('RMSD', fontsize=18)
     ax_RMSE.set_ylabel('local NMAE', fontsize=18)
+    ax_mAC.set_ylabel('mean Activity', fontsize=18)
     plt.rcParams["savefig.directory"] = os.getcwd()
 
     if errors:
@@ -142,21 +144,9 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
         dict_sphereslabels_CNR={}
         dict_sphereslabels_RMSD={}
         dict_sphereslabels_RMSE = {}
+        dict_sphereslabels_mAC = {}
         print(img_file)
         for sph_label in dict_sphereslabels_radius:
-            # fig,ax =plt.subplots(1,3)
-            # lll = np_labels==json_labels[sph_label]
-            # llm = np_recons_normalized*lll
-            # lls = np_src*lll
-            # ax[0].imshow(lll[:,120,:])
-            # ax[1].imshow(llm[:,120,:])
-            # ax[2].imshow(lls[:,120,:])
-            # ax[1].set_title(img_file)
-            # plt.show()
-            # mean_act_src = np.mean(np_src[np_labels == json_labels[sph_label]])
-            # mean_act_img = np.mean(np_recons_normalized[np_labels==json_labels[sph_label]])
-            # mean_bg_img = np.mean(np_recons_normalized[background_mask])
-
             mask_src = np.ma.masked_where(np_labels != json_labels[sph_label], np_src,copy=True)
             mask_img = np.ma.masked_where(np_labels != json_labels[sph_label], np_recons_normalized,copy=True)
             mean_act_src = mask_src.mean()
@@ -175,13 +165,16 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
                                                           img=np_recons_normalized)
             # dict_sphereslabels_RMSD[sph_label] = utils.RMS(mask=(np_labels==json_labels[sph_label]), img=np_recons_normalized,src = np_src)
             dict_sphereslabels_RMSD[sph_label] = utils.RMS(mask=(np_labels==json_labels[sph_label]), img=np_recons_normalized)
+
             dict_sphereslabels_RMSE[sph_label] = utils.local_NMAE(mask=(np_labels==json_labels[sph_label]),img=np_recons_normalized, src = np_src)
+
+            dict_sphereslabels_mAC[sph_label] = np.mean(np_recons[np_labels==json_labels[sph_label]]) / 2400 / (2.3976**3) / np.mean((np_src*np_src_norm)[np_labels==json_labels[sph_label]])
 
         global_CNR = utils.CNR(mask1=(np_labels==6) + (np_labels==8 ) + (np_labels==12) + (np_labels==13) + (np_labels==14) + (np_labels==15),
                                mask2 = background_mask, img = np_recons_normalized)
         print(f'global CNR : {global_CNR}')
 
-        x,y_RC,y_CRC,y_CNR,y_RMSD,y_RMSE =[],[],[],[],[],[]
+        x,y_RC,y_CRC,y_CNR,y_RMSD,y_RMSE,y_mAC =[],[],[],[],[],[],[]
         for sph_label in dict_sphereslabels_RC:
             x.append(dict_sphereslabels_radius[sph_label] / FWHM_b )
             y_RC.append(dict_sphereslabels_RC[sph_label])
@@ -189,6 +182,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
             y_CNR.append(dict_sphereslabels_CNR[sph_label])
             y_RMSD.append(dict_sphereslabels_RMSD[sph_label])
             y_RMSE.append(dict_sphereslabels_RMSE[sph_label])
+            y_mAC.append(dict_sphereslabels_mAC[sph_label])
 
         print(y_RC)
         ax_RC.plot(x,y_RC, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
@@ -196,6 +190,7 @@ def show_RC_curve(labels, labels_json, source, recons_img, legend,color, norm,er
         ax_CNR.plot(x,y_CNR, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
         ax_RMSD.plot(x,y_RMSD, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
         ax_RMSE.plot(x,y_RMSE, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
+        ax_mAC.plot(x,y_mAC, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
 
         # if (errors and img_num!=3):
         if (errors):

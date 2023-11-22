@@ -142,7 +142,7 @@ def osem_reconstruction(input,start, outputfilename,like,size,spacing, geom,sid,
         BP = osem.BackProjectionType_BP_ZENG
 
         if pvc:
-            sigma0_psf, alpha_psf = get_psf_params(machine=spect_system)
+            sigma0_psf, alpha_psf,_ = get_psf_params(machine=spect_system)
             osem.SetSigmaZero(sigma0_psf)
             osem.SetAlpha(alpha_psf)
         else:
