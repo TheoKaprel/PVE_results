@@ -151,10 +151,10 @@ def osem_reconstruction(input,start,startit, outputfilename,like,size,spacing, g
         if pvc:
             sigma0_psf, alpha_psf,_ = get_psf_params(machine=spect_system)
             osem.SetSigmaZero(sigma0_psf)
-            osem.SetAlpha(alpha_psf)
+            osem.SetAlphaPSF(alpha_psf)
         else:
             osem.SetSigmaZero(0)
-            osem.SetAlpha(0)
+            osem.SetAlphaPSF(0)
     elif projector_type=='Joseph':
         FP = osem.ForwardProjectionType_FP_JOSEPH
         BP = osem.BackProjectionType_BP_JOSEPH
