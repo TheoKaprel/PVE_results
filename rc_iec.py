@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+
+
+import itk
+import matplotlib.pyplot as plt
+import numpy as np
+import json
+import os
+from pathlib import Path
+import argparse
+import sys
+
+path_root = Path(__file__).parents[1]
+sys.path.append(str(path_root))
+
+# dictionnary whith spheres labels as keys and their corresponding radius as value.
+dict_sphereslabels_radius = {
+    "iec_sphere_10mm": 10,
+    "iec_sphere_13mm": 13,
+    "iec_sphere_17mm": 17,
+    "iec_sphere_22mm": 22,
+    "iec_sphere_28mm": 28,
+    "iec_sphere_37mm": 37,
+}
+
+
+def main():
+    print(args)
+
+    legend = args.l
+    color = args.c
+    recons_img = args.images
+    labels=args.labels
+    labels_json = args.labels_json
+    source  = args.source
+
+    if len(legend)>0:
+        assert(len(legend)==len(recons_img))
+    else:
+        legend = recons_img
+
+    if len(color)>0:
+        assert (len(color)==len(recons_img))
+    else:
+        color = ['green', 'blue', 'orange', 'red', 'black', 'magenta', 'cyan','yellow','brown','purple','pink','teal','gold','navy','olive','maroon','gray','lime','indigo','beige','turquoise']
+
+
+    img_labels = itk.imread(labels)
+    np_labels = itk.array_from_image(img_labels)
+
+    json_labels_filename = labels_json
+    json_labels_file = open(json_labels_filename).read()
+    json_labels = json.loads(json_labels_file)
+
+    # background mask
+    if "background" in json_labels.keys():
+        background_mask = (np_labels==json_labels['background'])
+    elif "iec" in json_labels.keys():
+        background_mask = (np_labels==json_labels['iec'])
+    else:
+        print(f"ERROR : background not found in --json_labels. Keys are : {json_labels.keys()}")
+        exit(0)
+
+    # open source image
+    img_src = itk.imread(source)
+    np_src = itk.array_from_image(img_src)
+    np_src_normed = np_src / np_src.sum()
+    # np_src_normed = np_src / np_src.max()
+
+    fig_RC,ax_RC = plt.subplots()
+    ax_RC.set_xlabel('Sphere Volume (mL)', fontsize=18)
+    ax_RC.set_ylabel('RC', fontsize=18)
+
+    fig_RMS,ax_RMS = plt.subplots()
+    ax_RMS.set_xlabel('Sphere Volume (mL)', fontsize=18)
+    ax_RMS.set_ylabel('RMS', fontsize=18)
+
+    plt.rcParams["savefig.directory"] = os.getcwd()
+
+
+    for img_num,img_file in enumerate(recons_img):
+        img_recons = itk.imread(img_file)
+        np_recons = itk.array_from_image(img_recons)
+        np_recons_normalized = np_recons / np_recons.sum()
+        # np_recons_normalized = np_recons / np_recons.max()
+
+        dict_sphereslabels_RC = {}
+        dict_sphereslabels_RMS = {}
+        print(img_file)
+
+        # fig,ax = plt.subplots(4)
+        # ax[0].imshow(np_src[:,37,:])
+        # ax[1].imshow(np_labels[:,37,:])
+        # ax[2].imshow(np_recons[:,37,:])
+        # ax[3].imshow((np_recons*(np_labels>1))[:,37,:])
+        # plt.show()
+
+        for sph_label in dict_sphereslabels_radius:
+            mean_act_src = (np_src_normed[np_labels==json_labels[sph_label]]).mean()
+            # mean_act_src = (np_src[np_labels==json_labels[sph_label]]).mean()
+            mean_act_img = (np_recons_normalized[np_labels==json_labels[sph_label]]).mean()
+            # mean_act_img = (np_recons[np_labels==json_labels[sph_label]]).mean()
+            std_act_img = (np_recons_normalized[np_labels==json_labels[sph_label]]).std()
+            dict_sphereslabels_RC[sph_label] = mean_act_img / mean_act_src
+            dict_sphereslabels_RMS[sph_label] = mean_act_img / std_act_img
+            # dict_sphereslabels_RMS[sph_label] = (np_recons[np_labels==json_labels[sph_label]]).mean() / (np_recons[np_labels==json_labels['background']]).mean()
+
+            # dict_sphereslabels_RMS[sph_label] = mean_act_img/std_act_img
+            # dict_sphereslabels_RMS[sph_label] = (np_recons[np_labels==json_labels[sph_label]]).mean() / (np_recons[np_labels==json_labels[sph_label]]).std()
+
+
+
+        x,y_RC,y_RMS =[],[],[]
+        for sph_label in dict_sphereslabels_RC:
+            x.append(4/3* np.pi * (dict_sphereslabels_radius[sph_label]/2)**3 * 1/1000)
+            y_RC.append(dict_sphereslabels_RC[sph_label])
+            y_RMS.append(dict_sphereslabels_RMS[sph_label])
+
+
+        print(y_RC)
+
+        ax_RC.plot(x,y_RC, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
+        ax_RMS.plot(x,y_RMS, '-o',markersize = 5, linewidth = 2, color = color[img_num], label = legend[img_num])
+
+
+    ax_RC.plot(x, [1 for _ in x], '--', color = 'grey')
+    ax_RC.legend(fontsize=12)
+    ax_RMS.legend(fontsize=12)
+
+
+    plt.show()
+
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("images", nargs='+')
+    parser.add_argument("--labels")
+    parser.add_argument("--labels-json")
+    parser.add_argument("--source")
+    parser.add_argument("-l", nargs='+')
+    parser.add_argument("-c", nargs='+', default = [])
+    args = parser.parse_args()
+    main()
+
