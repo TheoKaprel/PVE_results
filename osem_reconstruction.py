@@ -11,7 +11,25 @@ import sys
 path_root = Path(__file__).parents[1]
 sys.path.append(str(path_root))
 
-from PVE_data.Analytical_data.parameters import get_psf_params
+
+def get_psf_params(machine):
+    c = (2 * np.sqrt(2 * np.log(2)))
+    if machine=="siemens-intevo-lehr":
+        # experimental fit
+        sigma0_psf = 1.9111
+        alpha_psf = 0.01767
+        # cf abstract HOA MIC
+        efficiency = 0.0096/100
+        alpha_fwhm, sigma_fwhm = c * alpha_psf, c * sigma0_psf
+    elif machine=="siemens-intevo-megp":
+        alpha_psf = 0.03235363042582603
+        sigma0_psf= 1.1684338873367237
+        efficiency = 0.00012387387387387 # cf intevo siemens doc
+        alpha_fwhm, sigma_fwhm = c * alpha_psf, c * sigma0_psf
+    else:
+        print(f"ERROR: wrong spect sytem ({machine} not found). Choose between [siemens-intevo-lehr, siemens-intevo-megp]")
+        exit(0)
+    return sigma0_psf, alpha_psf, efficiency
 
 def strParamToArray(str_param):
     array_param = np.array(str_param.split(','))

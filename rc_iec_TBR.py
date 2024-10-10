@@ -30,9 +30,9 @@ def main():
     legend = args.l
     color = args.c
     recons_img = args.images
+    sources = args.sources
     labels=args.labels
     labels_json = args.labels_json
-    source  = args.source
     fontsize = 30
     if len(legend)>0:
         assert(len(legend)==len(recons_img))
@@ -61,18 +61,6 @@ def main():
         print(f"ERROR : background not found in --json_labels. Keys are : {json_labels.keys()}")
         exit(0)
 
-    # open source image
-    img_src = itk.imread(source)
-    np_src = itk.array_from_image(img_src)
-    if args.norm=="sum":
-        np_src_normed = np_src / np_src.sum()
-    elif args.norm=="sum_bg":
-        np_src_normed = np_src / np_src[np_labels>0].sum()
-    else:
-        np_src_normed = np_src
-
-    # np_src_normed = np_src / np_src.max()
-
     fig_RC,ax_RC = plt.subplots()
     ax_RC.set_xlabel('Sphere Volume (mL)', fontsize=fontsize)
     ax_RC.set_ylabel('Recovery Coefficient (RC)', fontsize=fontsize)
@@ -83,10 +71,18 @@ def main():
 
     plt.rcParams["savefig.directory"] = os.getcwd()
 
-    for img_num,img_file in enumerate(recons_img):
+    for img_num,(src_file, img_file) in enumerate(zip(sources,recons_img)):
+        img_src = itk.imread(src_file)
+        np_src = itk.array_from_image(img_src)
+        if args.norm == "sum":
+            np_src_normed = np_src / np_src.sum()
+        elif args.norm == "sum_bg":
+            np_src_normed = np_src / np_src[np_labels > 0].sum()
+        else:
+            np_src_normed = np_src
+
         img_recons = itk.imread(img_file)
         np_recons = itk.array_from_image(img_recons)
-
         if args.norm == "sum":
             np_recons_normalized = np_recons / np_recons.sum()
         elif args.norm=="sum_bg":
@@ -101,12 +97,6 @@ def main():
         dict_sphereslabels_RMS = {}
         print(img_file)
 
-        # fig,ax = plt.subplots(4)
-        # ax[0].imshow(np_src[:,37,:])
-        # ax[1].imshow(np_labels[:,37,:])
-        # ax[2].imshow(np_recons[:,37,:])
-        # ax[3].imshow((np_recons*(np_labels>1))[:,37,:])
-        # plt.show()
 
         for sph_label in dict_sphereslabels_radius:
             mean_act_src = (np_src_normed[np_labels==json_labels[sph_label]]).mean()
@@ -114,13 +104,19 @@ def main():
             mean_act_img_bg = (np_recons_normalized[background_mask]).mean()
             std_act_img_bg = (np_recons_normalized[background_mask]).std()
             # dict_sphereslabels_RC[sph_label] = mean_act_img / mean_act_src
-            dict_sphereslabels_RC[sph_label] = 1 - (np.abs((np_recons_normalized-np_src_normed)[np_labels==json_labels[sph_label]])).mean()
+            # dict_sphereslabels_RC[sph_label] = 1 - np.abs((np_recons_normalized-np_src_normed)[np_labels==json_labels[sph_label]]).mean()
+            dict_sphereslabels_RC[sph_label] = 1 - (np.abs(np_recons_normalized-np_src_normed)[np_labels==int(json_labels[sph_label])]).mean()/(np.abs(np_src_normed[np_labels==int(json_labels[sph_label])])).mean()
             dict_sphereslabels_RMS[sph_label] = (mean_act_img - mean_act_img_bg) / std_act_img_bg
-            # dict_sphereslabels_RMS[sph_label] = (np_recons[np_labels==json_labels[sph_label]]).mean() / (np_recons[np_labels==json_labels['background']]).mean()
 
-            # dict_sphereslabels_RMS[sph_label] = mean_act_img/std_act_img
-            # dict_sphereslabels_RMS[sph_label] = (np_recons[np_labels==json_labels[sph_label]]).mean() / (np_recons[np_labels==json_labels[sph_label]]).std()
-
+        # for lbl_name,lbl_id in json_labels.items():
+        #     # mean_act_src = (np_src_normed[np_labels==json_labels[sph_label]]).mean()
+        #     # mean_act_img = (np_recons_normalized[np_labels==json_labels[sph_label]]).mean()
+        #     # mean_act_img_bg = (np_recons_normalized[background_mask]).mean()
+        #     # std_act_img_bg = (np_recons_normalized[background_mask]).std()
+        #     # dict_sphereslabels_RC[sph_label] = mean_act_img / mean_act_src
+        #     # dict_sphereslabels_RC[sph_label] = 1 - np.abs((np_recons_normalized-np_src_normed)[np_labels==json_labels[sph_label]]).mean()
+        #     dict_sphereslabels_RC[sph_label] = (np.abs(np_recons_normalized-np_src)[np_labels==int(lbl_id)]).mean()
+        #     dict_sphereslabels_RMS[sph_label] = 1
 
 
         x,y_RC,y_RMS =[],[],[]
@@ -137,7 +133,7 @@ def main():
 
 
     ax_RC.plot(x, [1 for _ in x], '--', color = 'grey')
-    ax_RC.legend(fontsize=fontsize)
+    ax_RC.legend(fontsize=15)
     ax_RC.tick_params(axis='x', labelsize=20)
     ax_RC.tick_params(axis='y', labelsize=20)
     ax_RMS.legend(fontsize=12)
@@ -153,7 +149,7 @@ if __name__ == '__main__':
     parser.add_argument("images", nargs='+')
     parser.add_argument("--labels")
     parser.add_argument("--labels-json")
-    parser.add_argument("--source")
+    parser.add_argument("--sources", nargs='+', help = "SAME ORDER AS IMAGES")
     parser.add_argument("--norm")
     parser.add_argument("-l", nargs='+')
     parser.add_argument("-c", nargs='+', default = [])

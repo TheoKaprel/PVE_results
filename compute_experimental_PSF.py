@@ -5,12 +5,13 @@ import gatetools
 import itk
 import numpy as np
 import matplotlib.pyplot as plt
-
+from scipy.ndimage import gaussian_filter
 
 def main():
     print(args)
 
-    sigma_array = np.linspace(0, args.sigma_max, 25)
+    fwhm_array = np.linspace(args.fwhm_min, args.fwhm_max, args.N)
+    sigma_array = fwhm_array / (2 * np.sqrt(2 * np.log(2)))
     nrmse_array = np.zeros_like(sigma_array)
 
     image = itk.imread(args.image)
@@ -18,8 +19,10 @@ def main():
 
     # normalisation:
     source_img = itk.imread(args.source)
-    sum_src = itk.array_from_image(source_img).sum()
-    image_array = image_array / image_array.sum() * sum_src
+    source_array = itk.array_from_image(source_img)
+    sum_src = source_array.sum()
+    image_array = image_array*337
+    # image_array = image_array / image_array.sum() * sum_src
 
     for (k,s) in enumerate(sigma_array):
         ls = np.array([s, s, s])
@@ -36,11 +39,17 @@ def main():
     ax.set_ylabel("NRMSE")
     plt.show()
 
-    N = 50
+    N = args.N
 
-    sigma_x = np.linspace(args.sigma_min, args.sigma_max, N)
-    sigma_y = np.linspace(args.sigma_min, args.sigma_max, N)
-    sigma_z = np.linspace(args.sigma_min, args.sigma_max, N)
+    # fwhm_x = np.linspace(args.fwhm_min, args.fwhm_max, N)
+    # fwhm_y = np.linspace(args.fwhm_min, args.fwhm_max, N)
+    # fwhm_z = np.linspace(args.fwhm_min, args.fwhm_max, N)
+    fwhm_x = np.linspace(8,12, N)
+    fwhm_y = np.linspace(15,19, N)
+    fwhm_z = np.linspace(9,13, N)
+    sigma_x = fwhm_x/ (2 * np.sqrt(2 * np.log(2)))
+    sigma_y= fwhm_y / (2 * np.sqrt(2 * np.log(2)))
+    sigma_z = fwhm_z / (2 * np.sqrt(2 * np.log(2)))
 
     min = 2024
     lsigma = None
@@ -67,8 +76,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--source")
     parser.add_argument("--image")
-    parser.add_argument("--sigma_min", type=float, default = 0)
-    parser.add_argument("--sigma_max", type=float, default = 13)
+    parser.add_argument("--fwhm_min", type=float, default = 0)
+    parser.add_argument("--fwhm_max", type=float, default = 13)
+    parser.add_argument("-N", type=int, default = 10)
     args = parser.parse_args()
 
     main()
