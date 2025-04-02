@@ -25,16 +25,16 @@ def main():
     fig,ax =plt.subplots()
 
     data = []
-    lbllls = ["1UNET\nrecfp\n2Blocks",
-              "1UNET\nrecfp\n3Blocks",
+    lbllls = ["1UNET\nrecfp\n3Blocks",
               "1UNET\nrecfp\n4Blocks",
-              "2CNN\nrecfp/PVEloss\n4Blocks",
-              "2CNN\nrecfp/PVEloss\n6Blocks",
-              "2UNETS\nrecfp/PVEloss\n2Blocks",
+              "1UNET\nrecfp\n5Blocks",
+              "2CNN\nrecfp/PVEloss\n32ch",
+              "2CNN\nrecfp/PVEloss\n64ch",
               "2UNETS\nrecfp/PVEloss\n3Blocks",
               "2UNETS\nrecfp/PVEloss\n4Blocks",
-              "2UNETS\nrecfp\n2Blocks",
-              "2UNETS\nPVEloss\n2Blocks",
+              "2UNETS\nrecfp/PVEloss\n5Blocks",
+              "2UNETS\nrecfp\n3Blocks",
+              "2UNETS\nPVEloss\n3Blocks",
               ]
     for k,inp in enumerate(args.inputs):
         a = np.load(inp)
@@ -56,7 +56,7 @@ def main():
         inp = inp.replace("NRMSE", "NMAE")
         a = np.load(inp)
         data.append(a)
-        print(lbllls[k], a.mean(), a.std(), mean_confidence_interval(a))
+        print(lbllls[k], a.mean(), a.std(), mean_confidence_interval(a), (a.shape))
         print('---')
     parts = ax.violinplot(data,showmeans=True)
     ax.set_ylabel("NMAE", fontsize=20)

@@ -110,14 +110,19 @@ def main():
 
         for sph_label in dict_sphereslabels_radius:
             mean_act_src = (np_src_normed[np_labels==json_labels[sph_label]]).mean()
+            mean_act_src_bg = np_src_normed[background_mask].mean()
             mean_act_img = (np_recons_normalized[np_labels==json_labels[sph_label]]).mean()
             mean_act_img_bg = (np_recons_normalized[background_mask]).mean()
             std_act_img_bg = (np_recons_normalized[background_mask]).std()
-            # dict_sphereslabels_RC[sph_label] = mean_act_img / mean_act_src
-            dict_sphereslabels_RC[sph_label] = 1 - (np.abs((np_recons_normalized-np_src_normed)[np_labels==json_labels[sph_label]])).mean()
-            dict_sphereslabels_RMS[sph_label] = (mean_act_img - mean_act_img_bg) / std_act_img_bg
-            # dict_sphereslabels_RMS[sph_label] = (np_recons[np_labels==json_labels[sph_label]]).mean() / (np_recons[np_labels==json_labels['background']]).mean()
+            std_act_img_sph = (np_recons_normalized[background_mask]).std()
+            dict_sphereslabels_RC[sph_label] = mean_act_img / mean_act_src
+            # dict_sphereslabels_RC[sph_label] = np.mean(np.abs(np_recons_normalized[np_labels==json_labels[sph_label]]-np_src_normed[np_labels==json_labels[sph_label]]))
+            # dict_sphereslabels_RC[sph_label] = (mean_act_img/mean_act_img_bg - 1) / (mean_act_src/mean_act_src_bg - 1)
+            # dict_sphereslabels_RC[sph_label] = 1 - (np.abs((np_recons_normalized-np_src_normed)[np_labels==json_labels[sph_label]])).mean()
 
+            # dict_sphereslabels_RMS[sph_label] = (mean_act_img - mean_act_img_bg) / std_act_img_bg
+            dict_sphereslabels_RMS[sph_label] = (mean_act_img - mean_act_img_bg) / std_act_img_sph
+            # dict_sphereslabels_RMS[sph_label] = (np_recons[np_labels==json_labels[sph_label]]).mean() / (np_recons[np_labels==json_labels['background']]).mean()
             # dict_sphereslabels_RMS[sph_label] = mean_act_img/std_act_img
             # dict_sphereslabels_RMS[sph_label] = (np_recons[np_labels==json_labels[sph_label]]).mean() / (np_recons[np_labels==json_labels[sph_label]]).std()
 

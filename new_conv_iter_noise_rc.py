@@ -38,7 +38,8 @@ def get_MSE_RC_CNR_iters(path_iterations, src,json_labels, np_labels):
         CRCs = []
         CNRs = []
         for organ, lbl in json_labels.items():
-            if ((organ!="body") and ("label" not in organ)):
+            # if ((organ!="body") and ("label" not in organ)):
+            if (organ!="body"):
                 act_organ = imgn[np_labels==lbl].mean()
                 src_organ = src[np_labels==lbl].mean()
                 CRCs.append((act_organ/act_bg - 1)/(src_organ/src_bg - 1))
@@ -70,27 +71,46 @@ def main():
     fig,ax= plt.subplots(1,2)
 
     l_mse_RM, l_mRC_RM, l_CNR_RM, list_iters_RM= get_MSE_RC_CNR_iters(args.rm,src = srcn,json_labels=json_labels,np_labels=np_labels)
-    l_mse_PVCNet, l_mRC_PVCNet, l_CNR_PVCNet, list_iters_PVCNet = get_MSE_RC_CNR_iters(args.pvcnet,src = srcn,json_labels=json_labels,np_labels=np_labels)
+    l_mse_PVCNet, l_mRC_PVCNet, l_CNR_PVCNet, list_iters_PVCNet = get_MSE_RC_CNR_iters(args.pvcnet_sino,src = srcn,json_labels=json_labels,np_labels=np_labels)
+    l_mse_PVCNet_img, l_mRC_PVCNet_img, l_CNR_PVCNet_img, list_iters_PVCNet_img = get_MSE_RC_CNR_iters(args.pvcnet_img,src = srcn,json_labels=json_labels,np_labels=np_labels)
+    l_mse_PVCNet_hybrid, l_mRC_PVCNet_hybrid, l_CNR_PVCNet_hybrid, list_iters_PVCNet_hybrid = get_MSE_RC_CNR_iters(args.pvcnet_hybrid,src = srcn,json_labels=json_labels,np_labels=np_labels)
     l_mse_iY, l_mRC_iY, l_CNR_iY, list_iters_iY = get_MSE_RC_CNR_iters(args.iy,src = srcn,json_labels=json_labels,np_labels=np_labels)
 
     print(l_mse_PVCNet)
     print(l_mse_iY)
 
     list_iters_PVCNet = list_iters_RM[:10]+[list_iters_RM[9]+lkl for lkl in list_iters_PVCNet]
+    list_iters_PVCNet_img = list_iters_RM[:10]+[list_iters_RM[9]]
+    list_iters_PVCNet_hybrid = list_iters_RM[:20]+[list_iters_RM[19]]
+    print(list_iters_PVCNet_img)
+    print(list_iters_PVCNet_hybrid)
     list_iters_iY = list_iters_RM+[list_iters_RM[-1]]
 
     l_mse_PVCNet = l_mse_RM[:10]+l_mse_PVCNet
     l_mRC_PVCNet = l_mRC_RM[:10]+l_mRC_PVCNet
     l_CNR_PVCNet = l_CNR_RM[:10]+l_CNR_PVCNet
+
+    l_mse_PVCNet_img  = l_mse_RM[:10]+l_mse_PVCNet_img
+    l_mRC_PVCNet_img  = l_mRC_RM[:10]+l_mRC_PVCNet_img
+    l_CNR_PVCNet_img  = l_CNR_RM[:10]+l_CNR_PVCNet_img
+
+    l_mse_PVCNet_hybrid  = l_mse_PVCNet[:20]+l_mse_PVCNet_hybrid
+    l_mRC_PVCNet_hybrid  = l_mRC_PVCNet[:20]+l_mRC_PVCNet_hybrid
+    l_CNR_PVCNet_hybrid  = l_CNR_PVCNet[:20]+l_CNR_PVCNet_hybrid
+
     l_mse_iY = l_mse_RM+l_mse_iY
     l_mRC_iY = l_mRC_RM+l_mRC_iY
     l_CNR_iY = l_CNR_RM+l_CNR_iY
 
-    ax[0].plot(list_iters_PVCNet,l_mse_PVCNet,marker='o', linestyle="-", label='PVCNet-sino', color = 'orange', linewidth = 3)
+    ax[0].plot(list_iters_PVCNet_img,l_mse_PVCNet_img,marker='o', linestyle="-", label='PVCNet-img', color = 'red', linewidth = 3)
+    ax[0].plot(list_iters_PVCNet_hybrid ,l_mse_PVCNet_hybrid ,marker='o', linestyle="-", label='PVCNet-sino-img', color = 'orange', linewidth = 3)
+    ax[0].plot(list_iters_PVCNet,l_mse_PVCNet,marker='o', linestyle="-", label='PVCNet-sino', color = 'gold', linewidth = 3)
     ax[0].plot(list_iters_iY,l_mse_iY,marker='o', linestyle="-", label='iY', color = 'blueviolet', linewidth = 3)
     ax[0].plot(list_iters_RM,l_mse_RM,marker='o', linestyle="-",label='RM', color = 'blue', linewidth = 3)
 
-    ax[1].plot(l_mRC_PVCNet,l_CNR_PVCNet,marker='o', linestyle="-", color = 'orange', linewidth=3, label="PVCNet-sino")
+    ax[1].plot(l_mRC_PVCNet_img,l_CNR_PVCNet_img,marker='o', linestyle="-", color = 'red', linewidth=3, label="PVCNet-img")
+    ax[1].plot(l_mRC_PVCNet_hybrid,l_CNR_PVCNet_hybrid,marker='o', linestyle="-", color = 'orange', linewidth=3, label="PVCNet-sino-img")
+    ax[1].plot(l_mRC_PVCNet,l_CNR_PVCNet,marker='o', linestyle="-", color = 'gold', linewidth=3, label="PVCNet-sino")
     ax[1].plot(l_mRC_iY,l_CNR_iY,marker='o', linestyle="-", color = 'blueviolet', linewidth=3, label="iY")
     ax[1].plot(l_mRC_RM,l_CNR_RM,marker='o', linestyle="-", color = 'blue', linewidth=3, label="RM")
 
@@ -107,7 +127,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--source")
     parser.add_argument("--rm")
-    parser.add_argument("--pvcnet")
+    parser.add_argument("--pvcnet-sino")
+    parser.add_argument("--pvcnet-img")
+    parser.add_argument("--pvcnet-hybrid")
     parser.add_argument("--iy")
     parser.add_argument("--labels")
     parser.add_argument("--labels-json")

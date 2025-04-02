@@ -34,9 +34,10 @@ def NMAE(img,ref):
 
 
 def PSNR(img, ref):
-    max_ref = np.max(ref)
+    # L = max(img.max(), ref.max()) - min(img.min(), ref.min())
+    L = ref.max() - ref.min()
     mse = np.mean((ref - img) ** 2)
-    PSNR = 10 * np.log10((max_ref**2)/mse)
+    PSNR = 10 * np.log10(L**2/mse)
     return PSNR
 
 def CNR(mask1, mask2, img):
@@ -46,6 +47,7 @@ def CNR(mask1, mask2, img):
     std2 = np.std(img[mask2])
     # CNR = (mu1 - mu2) / (np.sqrt(std1**2 + std2**2))
     CNR = (mu1 - mu2) / std2
+    # CNR = (mu1 - mu2) / std1
     return CNR
 
 

@@ -19,9 +19,9 @@ def main():
 
     # normalisation:
     source_img = itk.imread(args.source)
-    source_array = itk.array_from_image(source_img)
-    sum_src = source_array.sum()
-    image_array = image_array*337
+    # source_array = itk.array_from_image(source_img)
+    # sum_src = source_array.sum()
+    # image_array = image_array*337
     # image_array = image_array / image_array.sum() * sum_src
 
     for (k,s) in enumerate(sigma_array):
@@ -41,12 +41,9 @@ def main():
 
     N = args.N
 
-    # fwhm_x = np.linspace(args.fwhm_min, args.fwhm_max, N)
-    # fwhm_y = np.linspace(args.fwhm_min, args.fwhm_max, N)
-    # fwhm_z = np.linspace(args.fwhm_min, args.fwhm_max, N)
-    fwhm_x = np.linspace(8,12, N)
-    fwhm_y = np.linspace(15,19, N)
-    fwhm_z = np.linspace(9,13, N)
+    fwhm_x = np.linspace(args.fwhm_min, args.fwhm_max, N)
+    fwhm_y = np.linspace(args.fwhm_min, args.fwhm_max, N)
+    fwhm_z = np.linspace(args.fwhm_min, args.fwhm_max, N)
     sigma_x = fwhm_x/ (2 * np.sqrt(2 * np.log(2)))
     sigma_y= fwhm_y / (2 * np.sqrt(2 * np.log(2)))
     sigma_z = fwhm_z / (2 * np.sqrt(2 * np.log(2)))
@@ -65,7 +62,7 @@ def main():
                 if nrmse < min:
                     lsigma = ls
                     min = nrmse
-                    print(ls, nrmse)
+                    print(ls * 2 * np.sqrt(2*np.log(2)), nrmse)
 
     lfwhm = 2*np.sqrt(2*np.log(2)) * lsigma
     print(f"FWHM : {lfwhm}")
