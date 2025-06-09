@@ -7,6 +7,9 @@ from itk import RTK as rtk
 import numpy as np
 import glob
 
+
+from osem_reconstruction import get_psf_params
+
 def main():
     print(args)
 
@@ -24,15 +27,16 @@ def main():
     for i in range(nproj):
         geometry.AddProjection(args.sid, 0, list_angles[i], Offset[0], Offset[1])
     osem.SetGeometry(geometry)
-
+    FP = osem.ForwardProjectionType_FP_ZENG
+    BP = osem.BackProjectionType_BP_ZENG
+    osem.SetForwardProjectionFilter(FP)
+    osem.SetBackProjectionFilter(BP)
     osem.SetNumberOfIterations(args.niterations)
     osem.SetNumberOfProjectionsPerSubset(args.nprojpersubset)
     osem.SetBetaRegularization(0)
-
-    FP = osem.ForwardProjectionType_FP_JOSEPHATTENUATED
-    BP = osem.BackProjectionType_BP_JOSEPHATTENUATED
-    osem.SetForwardProjectionFilter(FP)
-    osem.SetBackProjectionFilter(BP)
+    sigma0_psf, alpha_psf, _ = get_psf_params(machine="siemens-intevo-megp")
+    osem.SetSigmaZero(sigma0_psf)
+    osem.SetAlphaPSF(alpha_psf)
 
     list_projs = glob.glob(os.path.join(args.folder, "?????_PVE_att_noisy.mha"))
 
