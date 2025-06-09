@@ -25,54 +25,66 @@ def main():
     fig,ax =plt.subplots()
 
     data = []
-    lbllls = ["1UNET\nrecfp\n3Blocks",
-              "1UNET\nrecfp\n4Blocks",
-              "1UNET\nrecfp\n5Blocks",
-              "2CNN\nrecfp/PVEloss\n32ch",
-              "2CNN\nrecfp/PVEloss\n64ch",
-              "2UNETS\nrecfp/PVEloss\n3Blocks",
-              "2UNETS\nrecfp/PVEloss\n4Blocks",
-              "2UNETS\nrecfp/PVEloss\n5Blocks",
-              "2UNETS\nrecfp\n3Blocks",
-              "2UNETS\nPVEloss\n3Blocks",
-              ]
+    # lbllls = ["1UNET\nrecfp\n3Blocks",
+    #           "1UNET\nrecfp\n4Blocks",
+    #           "1UNET\nrecfp\n5Blocks",
+    #           "2CNN\nrecfp/PVEloss\n32ch",
+    #           "2CNN\nrecfp/PVEloss\n64ch",
+    #           "2UNETS\nrecfp/PVEloss\n3Blocks",
+    #           "2UNETS\nrecfp/PVEloss\n4Blocks",
+    #           "2UNETS\nrecfp/PVEloss\n5Blocks",
+    #           "2UNETS\nrecfp\n3Blocks",
+    #           "2UNETS\nPVEloss\n3Blocks",
+    #           ]
+    print('NRMSE_1 : ')
     for k,inp in enumerate(args.inputs):
         a = np.load(inp)
         data.append(a)
-        # print(lbllls[k], a.mean(), a.std(), mean_confidence_interval(a))
-        print("---")
+        print(k+1, inp, round(a.mean(),4), round(a.std(),4))
+        print('---')
 
     print(len(data))
-    ax.set_title("NRMSE")
+    ax.set_title("NRMSE_1")
     ax.violinplot(data,showmeans=True)
-    set_axis_style(ax,labels=args.inputs)
+    # set_axis_style(ax,labels=args.inputs)
 
     fig,ax =plt.subplots()
     data = []
-
-    # lbllls = args.inputs
-
+    print('NRMSE_2 : ')
     for k,inp in enumerate(args.inputs):
-        inp = inp.replace("NRMSE", "NMAE")
+        inp = inp.replace("NRMSE_1", "NRMSE_2")
         a = np.load(inp)
         data.append(a)
-        print(lbllls[k], a.mean(), a.std(), mean_confidence_interval(a), (a.shape))
+        print(k+1, inp, round(a.mean(),4), round(a.std(),4))
+        print('---')
+    parts = ax.violinplot(data,showmeans=True)
+    ax.set_ylabel("NRMSE_2", fontsize=20)
+    plt.yticks(fontsize=20)
+
+    fig,ax =plt.subplots()
+    data = []
+    print('NMAEs : ')
+    for k,inp in enumerate(args.inputs):
+        inp = inp.replace("NRMSE_1", "NMAE")
+        a = np.load(inp)
+        data.append(a)
+        print(k+1, inp, round(a.mean(),4), round(a.std(),4))
         print('---')
     parts = ax.violinplot(data,showmeans=True)
     ax.set_ylabel("NMAE", fontsize=20)
     plt.yticks(fontsize=20)
 
-    set_axis_style(ax,labels=lbllls)
-    for partname in ('cbars', 'cmins', 'cmaxes', 'cmeans'):
-        vp = parts[partname]
-        vp.set_edgecolor("black")
-        vp.set_linewidth(2)
-
-    for pc in parts['bodies']:
-        pc.set_facecolor('#D43F3A')
-        pc.set_edgecolor('#D43F3A')
-        pc.set_alpha(1)
-    plt.rcParams["savefig.directory"] = "/export/home/tkaprelian/Desktop/PVE/Results/output_from_Jean_Zay/jnm_ablation/eval"
+    # # set_axis_style(ax,labels=lbllls)
+    # for partname in ('cbars', 'cmins', 'cmaxes', 'cmeans'):
+    #     vp = parts[partname]
+    #     vp.set_edgecolor("black")
+    #     vp.set_linewidth(2)
+    #
+    # for pc in parts['bodies']:
+    #     pc.set_facecolor('#D43F3A')
+    #     pc.set_edgecolor('#D43F3A')
+    #     pc.set_alpha(1)
+    # plt.rcParams["savefig.directory"] = "/export/home/tkaprelian/Desktop/PVE/Results/output_from_Jean_Zay/jnm_ablation/eval"
 
     plt.show()
 
